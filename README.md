@@ -31,7 +31,6 @@ For version 0.3.0
 - add a way to catch eye attention when fullscreen is enabled.
 - add a button the toggle fullscreen back to previous size
 - add freehand drawing
-- add circular shaped boxes
 - add pixelated square boxes
 
 ## NOT SO IMPORTANT FIXES

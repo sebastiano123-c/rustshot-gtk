@@ -1,5 +1,30 @@
+@font-face {
+    font-family: "Font Awesome 6 Free";
+    src: url("path/to/fontawesome-webfont.woff2") format("woff2"),
+         url("path/to/fontawesome-webfont.woff") format("woff");
+    font-weight: 900; /* Solid weight */
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "Font Awesome 6 Free";
+    src: url("path/to/fontawesome-webfont-light.woff2") format("woff2"),
+         url("path/to/fontawesome-webfont-light.woff") format("woff");
+    font-weight: 300; /* Light weight */
+    font-style: normal;
+}
+
+.fas {
+    font-family: "Font Awesome 6 Free"; /* Ensure Font Awesome is loaded */
+    font-weight: 900; /* Solid weight */
+}
+
+.fal {
+    font-family: "Font Awesome 6 Free"; /* Ensure Font Awesome is loaded */
+    font-weight: 300; /* Light weight */
+}
+
 window {
-font-family: Arial, "Font Awesome 6 Free";
   background: rgba(0, 0, 0, 0.0);
 }
 tooltip { font-family: Arial, sans-serif; font-size: 12px; }
@@ -28,6 +53,7 @@ tooltip { font-family: Arial, sans-serif; font-size: 12px; }
 
 .toolbox-btn {
   font-size: 16px;
+font-family: Arial, "Font Awesome 6 Free";
   /* background-color: #bbb; */
   border-radius: 50%;
   border:0px;

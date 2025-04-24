@@ -45,16 +45,13 @@ impl Toolbox {
 
         if orientation == gtk::Orientation::Horizontal {
             tb.set_height_request(size);
-            // tb.set_halign(gtk::Align::Fill);
             tb.set_valign(align);
             tb.set_halign(gtk::Align::Center);
             tb.set_hexpand(true);
-            // tb.set_vexpand(true);
         } else {
             tb.set_width_request(size);
             tb.set_halign(align);
             tb.set_valign(gtk::Align::Center);
-            // tb.set_valign(gtk::Align::Fill);
         }
         tb
     }
@@ -70,8 +67,6 @@ impl Toolbox {
         btn.add_css_class("toolbox-btn");
         btn.set_width_request(self.buttons_width);
         btn.set_height_request(self.buttons_width);
-        // btn.set_valign(gtk::Align::Center);
-        // btn.set_halign(gtk::Align::Center);
 
         // add to list
         self.buttons_list.push(btn.clone());
@@ -403,17 +398,6 @@ impl Toolbox {
                 println!("No parent found for button");
             }
         }
-
-        // // remove the toolbox from central_box
-        // // remember that the last child of central_box id Drawing. If not, it is a toolbox.
-        // if let Some(child) = self.central_box.last_child() {
-        //     // Check if the widget is of type Button
-        //     if child.type_() == gtk::Box::static_type() {
-        //         self.central_box.remove_overlay(&child);
-        //     }
-        // } else {
-        //     println!("No last child found for central_box!");
-        // }
 
         // remove toolbox from central box if any
         if let Some(child) = self.central_box.last_child() {

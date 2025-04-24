@@ -1,5 +1,5 @@
 use gtk::prelude::*;
-mod drawing_area_boxes;
+mod drawing_area_manager;
 mod handles;
 mod rustshot_gui;
 mod toolbox;

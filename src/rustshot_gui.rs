@@ -1,4 +1,4 @@
-use super::drawing_area_boxes::DrawingAreaBoxes;
+use super::drawing_area_manager::DrawingAreaManager;
 use super::handles::Handles;
 use super::toolbox::Toolbox;
 use gtk::prelude::*;
@@ -38,10 +38,13 @@ pub struct RustshotGui {
     copy_to_clipboard: gtk::Button,
     fullscreen: gtk::Button,
     save_to_file: gtk::Button,
+    add_arc_fill: gtk::Button,
+    add_arc_no_fill: gtk::Button,
     add_rect_fill: gtk::Button,
     add_rect_no_fill: gtk::Button,
+    add_arrow: gtk::Button,
     change_color: gtk::Button,
-    boxes: Rc<RefCell<DrawingAreaBoxes>>,
+    draw_manager: Rc<RefCell<DrawingAreaManager>>,
     handles: Rc<RefCell<Handles>>,
     // current color
     red: Rc<Cell<f64>>,
@@ -126,7 +129,7 @@ impl RustshotGui {
 
         // define boxes
         let (red, green, blue) = (0.0, 0.0, 0.0);
-        let boxes = DrawingAreaBoxes::new(red, green, blue);
+        let boxes = DrawingAreaManager::new();
 
         // add toolbox buttons
         let tb_btn_s: i32 = 50;
@@ -138,12 +141,19 @@ impl RustshotGui {
             bottom_b.clone(),
             right_b.clone(),
         ); //, b.clone(), r.clone());
-        let fs = tb.create_toolbox_button("\u{f424}", Some("Set fullscreen"));
-        let arnf = tb.create_toolbox_button("\u{f096}", Some("Draw rectangle without fill"));
-        let arf = tb.create_toolbox_button("\u{f04d}", Some("Draw filled rectangle")); //f04d
-        let ctc = tb.create_toolbox_button("\u{f030}", Some(r#"Copy to clipboard"#)); // f24d, f030
-        let stf = tb.create_toolbox_button("\u{f0c7}", Some(r#"Save image"#));
-        let cc = tb.create_toolbox_button("\u{f53f}", Some("Pick color"));
+        let fullscree_btn = tb.create_toolbox_button("\u{f424}", Some("Set fullscreen"));
+        let add_box_no_fill_btn =
+            tb.create_toolbox_button("\u{f096}", Some("Draw rectangle without fill"));
+        let add_rect_btn = tb.create_toolbox_button("\u{f096}", Some("Draw filled rectangle")); //f04d
+        add_rect_btn.add_css_class("fas");
+        let add_arc_no_fill_btn =
+            tb.create_toolbox_button("\u{f111}", Some("Draw circle without fill"));
+        let add_arc_btn = tb.create_toolbox_button("\u{f111}", Some("Draw filled circle")); //f04d
+        add_arc_btn.add_css_class("fas");
+        let add_arrow_btn = tb.create_toolbox_button("\u{f061}", Some("Draw arrow"));
+        let pick_color_btn = tb.create_toolbox_button("\u{f53f}", Some("Pick color"));
+        let copy_clipboard_btn = tb.create_toolbox_button("\u{f328}", Some(r#"Copy to clipboard"#)); // f24d, f030
+        let save_to_file_btn = tb.create_toolbox_button("\u{f0c7}", Some(r#"Save image"#));
 
         // screenshot box start and size
         let sx = Rc::new(Cell::new(0.0));
@@ -200,13 +210,16 @@ impl RustshotGui {
             h: sh,
             // toolbox buttons
             toolbox: tb,
-            copy_to_clipboard: ctc,
-            fullscreen: fs,
-            save_to_file: stf,
-            add_rect_fill: arf,
-            add_rect_no_fill: arnf,
-            change_color: cc,
-            boxes: Rc::new(RefCell::new(boxes)),
+            copy_to_clipboard: copy_clipboard_btn,
+            fullscreen: fullscree_btn,
+            save_to_file: save_to_file_btn,
+            add_rect_fill: add_rect_btn,
+            add_rect_no_fill: add_box_no_fill_btn,
+            add_arc_fill: add_arc_btn,
+            add_arc_no_fill: add_arc_no_fill_btn,
+            add_arrow: add_arrow_btn,
+            change_color: pick_color_btn,
+            draw_manager: Rc::new(RefCell::new(boxes)),
             handles: Rc::new(RefCell::new(handles)),
             // color
             red: Rc::new(Cell::new(red)),
@@ -254,7 +267,7 @@ impl RustshotGui {
 
         // clone toolbox
         let toolbox = self.toolbox.clone();
-        let boxes = self.boxes.clone();
+        let boxes = self.draw_manager.clone();
         let handles = self.handles.clone();
 
         // clone color
@@ -408,7 +421,49 @@ impl RustshotGui {
             }
         ));
 
-        // apply filled rects to image
+        // Filled circles to image
+        let btn_arc_fill = self.add_arc_fill.clone();
+        btn_arc_fill.connect_clicked(glib::clone!(
+            #[weak]
+            boxes,
+            #[weak]
+            handles,
+            #[weak]
+            red,
+            #[weak]
+            green,
+            #[weak]
+            blue,
+            move |_| {
+                handles.borrow().set_central_box_sensitivity(false);
+                boxes
+                    .borrow_mut()
+                    .create_new_arc(red.get(), green.get(), blue.get(), true);
+            }
+        ));
+
+        // Unfilled circles
+        let btn_arc_no_fill = self.add_arc_no_fill.clone();
+        btn_arc_no_fill.connect_clicked(glib::clone!(
+            #[weak]
+            boxes,
+            #[weak]
+            handles,
+            #[weak]
+            red,
+            #[weak]
+            green,
+            #[weak]
+            blue,
+            move |_| {
+                handles.borrow().set_central_box_sensitivity(false);
+                boxes
+                    .borrow_mut()
+                    .create_new_arc(red.get(), green.get(), blue.get(), false);
+            }
+        ));
+
+        // Filled boxes to image
         let btn_fill = self.add_rect_fill.clone();
         btn_fill.connect_clicked(glib::clone!(
             #[weak]
@@ -425,13 +480,34 @@ impl RustshotGui {
                 handles.borrow().set_central_box_sensitivity(false);
                 boxes
                     .borrow_mut()
-                    .create_new_box(true, red.get(), green.get(), blue.get());
+                    .create_new_box(red.get(), green.get(), blue.get(), true);
             }
         ));
 
-        // apply filled rects to image
+        // Unfilled boxes
         let btn_no_fill = self.add_rect_no_fill.clone();
         btn_no_fill.connect_clicked(glib::clone!(
+            #[weak]
+            boxes,
+            #[weak]
+            handles,
+            #[weak]
+            red,
+            #[weak]
+            green,
+            #[weak]
+            blue,
+            move |_| {
+                handles.borrow().set_central_box_sensitivity(false);
+                boxes
+                    .borrow_mut()
+                    .create_new_box(red.get(), green.get(), blue.get(), false);
+            }
+        ));
+
+        // Draw arrow
+        let btn_arrow = self.add_arrow.clone();
+        btn_arrow.connect_clicked(glib::clone!(
             #[weak]
             boxes,
             #[weak]
@@ -440,7 +516,7 @@ impl RustshotGui {
                 handles.borrow().set_central_box_sensitivity(false);
                 boxes
                     .borrow_mut()
-                    .create_new_box(false, red.get(), green.get(), blue.get());
+                    .create_new_arrow(10.0, 2.0, red.get(), green.get(), blue.get());
             }
         ));
 
@@ -458,9 +534,7 @@ impl RustshotGui {
             left,
             move |_, x, y| {
                 if boxes.borrow().is_drawing() == true {
-                    boxes
-                        .borrow_mut()
-                        .drag_begin_box(left.get() + x, top.get() + y);
+                    boxes.borrow_mut().drag_begin(left.get() + x, top.get() + y);
                     drawing.queue_draw(); // Request a redraw
                 }
             }
@@ -470,15 +544,15 @@ impl RustshotGui {
             boxes,
             move |_, x, y| {
                 if boxes.borrow_mut().is_drawing() == true {
-                    boxes.borrow_mut().drag_update_box(x, y);
+                    boxes.borrow_mut().drag_update(x, y);
                     drawing.queue_draw(); // Request a redraw
                 }
             }
         ));
         draw_box.connect_drag_end(move |_, _, _| {
             if boxes.borrow_mut().is_drawing() == true {
-                boxes.borrow_mut().drag_end_box();
-                boxes.borrow_mut().is_drawing_boxes = false;
+                boxes.borrow_mut().drag_end();
+                boxes.borrow_mut().is_drawing = false;
                 handles.borrow().set_central_box_sensitivity(true);
             }
         });
@@ -658,8 +732,8 @@ impl RustshotGui {
                 right_box.set_width_request(r as i32);
 
                 // save screenshot width and height
-                sx.set(t);
-                sy.set(l);
+                sx.set(l);
+                sy.set(t);
                 sw.set(&full_w - l - r);
                 sh.set(&full_h - t - b);
             }
