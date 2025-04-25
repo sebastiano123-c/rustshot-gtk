@@ -37,6 +37,15 @@ cd rustshot-gtk
 cargo build --release && cp ./target/release/rustshot-gtk ~/.local/bin 
 ```
 
+Add in `~/.config/sway/config` to display the program in fullscreen
+```{bash}
+# bind key (change to whatever key bind you prefer)
+bindsym Shift+$mod+s exec $take_screenshot
+
+# opens in fullscreen
+for_window [app_id="rustshot-gtk"] border pixel 0, floating enable, fullscreen disable, move absolute position 0 0
+```
+
 ## TODO
 For version 0.4.0
 - create a settings button in the toolbox to adjust the brush, arrow, and lines width and size
