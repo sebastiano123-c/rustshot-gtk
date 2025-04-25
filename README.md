@@ -6,6 +6,8 @@ Simple screenshot program that works SwayWM.
 Uses Grim.
 Not tested on other DEs.
 
+![image](./images/capture.png)
+
 ## Motivation
 I couldn't get Flameshot to work on sway (every screenshot was half black). 
 I decided to create my own program using Rust and GTK4.
@@ -29,6 +31,7 @@ cargo build --release && cp ./target/release/rustshot-gtk ~/.local/bin
 ## TODO
 For version 0.4.0
 - create a settings button in the toolbox to adjust the brush, arrow, and lines width and size
+- add enumerated squares
 - add pixelated square boxes
 - add a way to catch eye attention when fullscreen is enabled.
 - add a button the toggle fullscreen back to previous size

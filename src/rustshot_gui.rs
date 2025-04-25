@@ -45,6 +45,7 @@ pub struct RustshotGui {
     add_arrow: gtk::Button,
     add_line: gtk::Button,
     add_freehand: gtk::Button,
+    add_numbered_circles: gtk::Button,
     change_color: gtk::Button,
     draw_manager: Rc<RefCell<DrawingAreaManager>>,
     // stretch handles
@@ -157,6 +158,7 @@ impl RustshotGui {
         let add_arrow_btn = tb.create_toolbox_button("\u{f061}", Some("Draw arrow"));
         let add_line_btn = tb.create_toolbox_button("\u{f068}", Some("Draw line"));
         let add_freehand_btn = tb.create_toolbox_button("\u{f1fc}", Some("Freehand draw"));
+        let add_num_circ_btn = tb.create_toolbox_button("\u{f06a}", Some("Add numbered circles"));
         let pick_color_btn = tb.create_toolbox_button("\u{f53f}", Some("Pick color"));
         let copy_clipboard_btn = tb.create_toolbox_button("\u{f328}", Some(r#"Copy to clipboard"#)); // f24d, f030
         let save_to_file_btn = tb.create_toolbox_button("\u{f0c7}", Some(r#"Save image"#));
@@ -226,6 +228,7 @@ impl RustshotGui {
             add_arrow: add_arrow_btn,
             add_line: add_line_btn,
             add_freehand: add_freehand_btn,
+            add_numbered_circles: add_num_circ_btn,
             change_color: pick_color_btn,
             draw_manager: Rc::new(RefCell::new(boxes)),
             handles: Rc::new(RefCell::new(handles)),
@@ -238,11 +241,6 @@ impl RustshotGui {
     }
 
     pub fn build_ui(&self) {
-        ////////////////////////////////////////////////
-        // Gesture to exit the program
-        ////////////////////////////////////////////////
-        self.gesture_exit();
-
         ////////////////////////////////////////////////
         // Gesture to create the screenshot
         ////////////////////////////////////////////////
@@ -286,6 +284,37 @@ impl RustshotGui {
             self.blue.clone(),
             self.alpha.clone(),
         );
+
+        // condition where button is clicked
+        let pressed = Rc::new(Cell::new(false));
+
+        ////////////////////////////////////////////////
+        // Gesture exit window
+        ////////////////////////////////////////////////
+        let keyboard_ctrl = gtk::EventControllerKey::new();
+        window.add_controller(keyboard_ctrl.clone());
+        keyboard_ctrl.connect_key_pressed({
+            let window = self.window.clone();
+            let pressed = Rc::clone(&pressed);
+            let handles = Rc::clone(&handles);
+            let boxes = Rc::clone(&boxes);
+            let toolbox = self.toolbox.clone();
+            move |_, _keyval, keycode, _state| {
+                // if 'esc' is pressed
+                if keycode == 9 {
+                    if pressed.get() == true {
+                        handles.borrow().set_central_box_sensitivity(true);
+                        boxes.borrow_mut().is_drawing = false;
+                        pressed.set(false);
+                        toolbox.remove_css_class("pressed");
+                    } else {
+                        window.destroy();
+                        return glib::signal::Propagation::Stop;
+                    }
+                }
+                glib::signal::Propagation::Proceed
+            }
+        });
 
         ////////////////////////////////////////////////
         // Change color
@@ -345,8 +374,57 @@ impl RustshotGui {
             }
         ));
 
-        // condition where button is clicked
-        let pressed = Rc::new(Cell::new(false));
+        // Create numbered circles
+        let add_numbered_circles = self.add_numbered_circles.clone();
+        add_numbered_circles.connect_clicked(glib::clone!(
+            #[weak]
+            boxes,
+            #[weak]
+            handles,
+            #[weak]
+            red,
+            #[weak]
+            green,
+            #[weak]
+            blue,
+            #[weak]
+            alpha,
+            #[weak]
+            toolbox,
+            #[weak]
+            pressed,
+            move |b| {
+                // if drawing, stops
+                if pressed.get() {
+                    handles.borrow().set_central_box_sensitivity(true);
+                    boxes.borrow_mut().is_drawing = false;
+                    pressed.set(false);
+                    // if its class is "pressed", then we do not want to continue to draw
+                    if let Some(_index) = b.css_classes().iter().position(|s| s == "pressed") {
+                        b.remove_css_class("pressed");
+                        return;
+                    } else {
+                        // otherwise, another button was clicked,
+                        // set every button's toolbox normal theme
+                        toolbox.borrow().remove_css_class("pressed");
+                    }
+                }
+                handles.borrow().set_central_box_sensitivity(false);
+                boxes.borrow_mut().create_new_numbered_circle(
+                    20.0,
+                    17.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    red.get(),
+                    green.get(),
+                    blue.get(),
+                    alpha.get(),
+                );
+                pressed.set(true);
+                b.add_css_class("pressed");
+            }
+        ));
 
         // Create line
         let btn_line = self.add_line.clone();
@@ -1031,24 +1109,24 @@ impl RustshotGui {
         ));
     }
 
-    fn gesture_exit(&self) {
-        let window = self.window.clone();
-        let keyboard_ctrl = gtk::EventControllerKey::new();
-        window.add_controller(keyboard_ctrl.clone());
-        keyboard_ctrl.connect_key_pressed({
-            let window = self.window.clone();
-            move |_, _keyval, keycode, _state| {
-                // if 'esc' is pressed
-                if keycode == 9 {
-                    window.destroy();
-                    glib::signal::Propagation::Stop
-                } else {
-                    glib::signal::Propagation::Proceed
-                }
-            }
-        });
-    }
-
+    // fn gesture_exit(&self) {
+    //     let window = self.window.clone();
+    //     let keyboard_ctrl = gtk::EventControllerKey::new();
+    //     window.add_controller(keyboard_ctrl.clone());
+    //     keyboard_ctrl.connect_key_pressed({
+    //         let window = self.window.clone();
+    //         move |_, _keyval, keycode, _state| {
+    //             // if 'esc' is pressed
+    //             if keycode == 9 {
+    //                 window.destroy();
+    //                 glib::signal::Propagation::Stop
+    //             } else {
+    //                 glib::signal::Propagation::Proceed
+    //             }
+    //         }
+    //     });
+    // }
+    //
     fn take_screenshot(x: i32, y: i32, w: i32, h: i32) {
         // build the grim string like "10,20 400x900"
         // we need to subtract the border of the screenbox (which is 2px, see style.css)
