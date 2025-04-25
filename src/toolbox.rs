@@ -378,6 +378,13 @@ impl Toolbox {
         *n_btns_left_to_draw -= max_n_for_bottom_toolbox;
     }
 
+    pub fn remove_css_class(&self, class: &str) {
+        //  every button from their parents before attaching them again
+        for btn in &self.buttons_list {
+            btn.remove_css_class(class);
+        }
+    }
+
     pub fn stop_toolbox(&self) {
         // // if toolbox is not drawn yet, return
         // if self.is_toolbox_drawn == false {

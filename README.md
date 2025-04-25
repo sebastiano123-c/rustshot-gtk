@@ -1,5 +1,5 @@
 # Rustshot-gtk
-Version: 0.2.0
+Version: 0.3.0
 
 ## Description
 Simple screenshot program that works SwayWM. 
@@ -27,11 +27,11 @@ cargo build --release && cp ./target/release/rustshot-gtk ~/.local/bin
 ```
 
 ## TODO
-For version 0.3.0
+For version 0.4.0
+- create a settings button in the toolbox to adjust the brush, arrow, and lines width and size
+- add pixelated square boxes
 - add a way to catch eye attention when fullscreen is enabled.
 - add a button the toggle fullscreen back to previous size
-- add freehand drawing
-- add pixelated square boxes
 
 ## NOT SO IMPORTANT FIXES
 - add the opportunity to draw screenshot area continuously (Not really important, probably will not be implemented)

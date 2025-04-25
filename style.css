@@ -54,9 +54,12 @@ tooltip { font-family: Arial, sans-serif; font-size: 12px; }
 .toolbox-btn {
   font-size: 16px;
 font-family: Arial, "Font Awesome 6 Free";
-  /* background-color: #bbb; */
   border-radius: 50%;
   border:0px;
+}
+
+.pressed {
+  background: rgba(140, 0, 0, 1.0);
 }
 
 .toolbox-btn:hover {

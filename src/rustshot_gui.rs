@@ -43,13 +43,17 @@ pub struct RustshotGui {
     add_rect_fill: gtk::Button,
     add_rect_no_fill: gtk::Button,
     add_arrow: gtk::Button,
+    add_line: gtk::Button,
+    add_freehand: gtk::Button,
     change_color: gtk::Button,
     draw_manager: Rc<RefCell<DrawingAreaManager>>,
+    // stretch handles
     handles: Rc<RefCell<Handles>>,
     // current color
     red: Rc<Cell<f64>>,
     green: Rc<Cell<f64>>,
     blue: Rc<Cell<f64>>,
+    alpha: Rc<Cell<f64>>,
 }
 
 impl RustshotGui {
@@ -128,7 +132,7 @@ impl RustshotGui {
         layout.append(&bottom_b);
 
         // define boxes
-        let (red, green, blue) = (0.0, 0.0, 0.0);
+        let (red, green, blue, alpha) = (1.0, 0.0, 0.0, 1.0);
         let boxes = DrawingAreaManager::new();
 
         // add toolbox buttons
@@ -151,6 +155,8 @@ impl RustshotGui {
         let add_arc_btn = tb.create_toolbox_button("\u{f111}", Some("Draw filled circle")); //f04d
         add_arc_btn.add_css_class("fas");
         let add_arrow_btn = tb.create_toolbox_button("\u{f061}", Some("Draw arrow"));
+        let add_line_btn = tb.create_toolbox_button("\u{f068}", Some("Draw line"));
+        let add_freehand_btn = tb.create_toolbox_button("\u{f1fc}", Some("Freehand draw"));
         let pick_color_btn = tb.create_toolbox_button("\u{f53f}", Some("Pick color"));
         let copy_clipboard_btn = tb.create_toolbox_button("\u{f328}", Some(r#"Copy to clipboard"#)); // f24d, f030
         let save_to_file_btn = tb.create_toolbox_button("\u{f0c7}", Some(r#"Save image"#));
@@ -218,6 +224,8 @@ impl RustshotGui {
             add_arc_fill: add_arc_btn,
             add_arc_no_fill: add_arc_no_fill_btn,
             add_arrow: add_arrow_btn,
+            add_line: add_line_btn,
+            add_freehand: add_freehand_btn,
             change_color: pick_color_btn,
             draw_manager: Rc::new(RefCell::new(boxes)),
             handles: Rc::new(RefCell::new(handles)),
@@ -225,6 +233,7 @@ impl RustshotGui {
             red: Rc::new(Cell::new(red)),
             green: Rc::new(Cell::new(green)),
             blue: Rc::new(Cell::new(blue)),
+            alpha: Rc::new(Cell::new(alpha)),
         }
     }
 
@@ -266,12 +275,17 @@ impl RustshotGui {
         let bottom = self.bottom.clone();
 
         // clone toolbox
-        let toolbox = self.toolbox.clone();
+        let toolbox = Rc::new(RefCell::new(self.toolbox.clone()));
         let boxes = self.draw_manager.clone();
         let handles = self.handles.clone();
 
         // clone color
-        let (red, green, blue) = (self.red.clone(), self.green.clone(), self.blue.clone());
+        let (red, green, blue, alpha) = (
+            self.red.clone(),
+            self.green.clone(),
+            self.blue.clone(),
+            self.alpha.clone(),
+        );
 
         ////////////////////////////////////////////////
         // Change color
@@ -281,11 +295,15 @@ impl RustshotGui {
             #[weak]
             window,
             #[weak]
+            boxes,
+            #[weak]
             red,
             #[weak]
             green,
             #[weak]
             blue,
+            #[weak]
+            alpha,
             move |_btn| {
                 // create color dialog
                 let cancellable = gio::Cancellable::new();
@@ -301,6 +319,13 @@ impl RustshotGui {
                             red.set(color.red() as f64);
                             green.set(color.green() as f64);
                             blue.set(color.blue() as f64);
+                            alpha.set(color.alpha() as f64);
+                            boxes.borrow_mut().set_rgba(
+                                red.get(),
+                                green.get(),
+                                blue.get(),
+                                alpha.get(),
+                            );
                         } else {
                             println!("No color found");
                         }
@@ -308,6 +333,388 @@ impl RustshotGui {
                 );
             }
         ));
+
+        ////////////////////////////////////////////////
+        // Draw rectangles on screenshot area
+        ////////////////////////////////////////////////
+        drawing.set_draw_func(glib::clone!(
+            #[weak]
+            boxes,
+            move |_, cr, _width, _height| {
+                boxes.borrow_mut().set_draw(&cr);
+            }
+        ));
+
+        // condition where button is clicked
+        let pressed = Rc::new(Cell::new(false));
+
+        // Create line
+        let btn_line = self.add_line.clone();
+        btn_line.connect_clicked(glib::clone!(
+            #[weak]
+            boxes,
+            #[weak]
+            handles,
+            #[weak]
+            red,
+            #[weak]
+            green,
+            #[weak]
+            blue,
+            #[weak]
+            alpha,
+            #[weak]
+            toolbox,
+            #[weak]
+            pressed,
+            move |b| {
+                // if drawing, stops
+                if pressed.get() {
+                    handles.borrow().set_central_box_sensitivity(true);
+                    boxes.borrow_mut().is_drawing = false;
+                    pressed.set(false);
+                    // if its class is "pressed", then we do not want to continue to draw
+                    if let Some(_index) = b.css_classes().iter().position(|s| s == "pressed") {
+                        b.remove_css_class("pressed");
+                        return;
+                    } else {
+                        // otherwise, another button was clicked,
+                        // set every button's toolbox normal theme
+                        toolbox.borrow().remove_css_class("pressed");
+                    }
+                }
+                handles.borrow().set_central_box_sensitivity(false);
+                boxes.borrow_mut().create_new_line(
+                    2.0,
+                    red.get(),
+                    green.get(),
+                    blue.get(),
+                    alpha.get(),
+                );
+                pressed.set(true);
+                b.add_css_class("pressed");
+            }
+        ));
+
+        // Filled circles to image
+        let btn_arc_fill = self.add_arc_fill.clone();
+        btn_arc_fill.connect_clicked(glib::clone!(
+            #[weak]
+            boxes,
+            #[weak]
+            handles,
+            #[weak]
+            red,
+            #[weak]
+            green,
+            #[weak]
+            blue,
+            #[weak]
+            alpha,
+            #[weak]
+            toolbox,
+            #[weak]
+            pressed,
+            move |b| {
+                // if drawing, stops
+                if pressed.get() {
+                    handles.borrow().set_central_box_sensitivity(true);
+                    boxes.borrow_mut().is_drawing = false;
+                    pressed.set(false);
+                    // if its class is "pressed", then we do not want to continue to draw
+                    if let Some(_index) = b.css_classes().iter().position(|s| s == "pressed") {
+                        b.remove_css_class("pressed");
+                        return;
+                    } else {
+                        // otherwise, another button was clicked,
+                        // set every button's toolbox normal theme
+                        toolbox.borrow().remove_css_class("pressed");
+                    }
+                }
+
+                handles.borrow().set_central_box_sensitivity(false);
+                boxes.borrow_mut().create_new_arc(
+                    red.get(),
+                    green.get(),
+                    blue.get(),
+                    alpha.get(),
+                    true,
+                );
+
+                b.add_css_class("pressed");
+                pressed.set(true);
+            }
+        ));
+
+        // Unfilled circles
+        let btn_arc_no_fill = self.add_arc_no_fill.clone();
+        btn_arc_no_fill.connect_clicked(glib::clone!(
+            #[weak]
+            boxes,
+            #[weak]
+            handles,
+            #[weak]
+            red,
+            #[weak]
+            green,
+            #[weak]
+            blue,
+            #[weak]
+            alpha,
+            #[weak]
+            toolbox,
+            #[weak]
+            pressed,
+            move |b| {
+                // if drawing, stops
+                if pressed.get() {
+                    handles.borrow().set_central_box_sensitivity(true);
+                    boxes.borrow_mut().is_drawing = false;
+                    pressed.set(false);
+                    // if its class is "pressed", then we do not want to continue to draw
+                    if let Some(_index) = b.css_classes().iter().position(|s| s == "pressed") {
+                        b.remove_css_class("pressed");
+                        return;
+                    } else {
+                        // otherwise, another button was clicked,
+                        // set every button's toolbox normal theme
+                        toolbox.borrow().remove_css_class("pressed");
+                    }
+                }
+
+                handles.borrow().set_central_box_sensitivity(false);
+                boxes.borrow_mut().create_new_arc(
+                    red.get(),
+                    green.get(),
+                    blue.get(),
+                    alpha.get(),
+                    false,
+                );
+
+                b.add_css_class("pressed");
+                pressed.set(true);
+            }
+        ));
+
+        // Filled boxes to image
+        let btn_fill = self.add_rect_fill.clone();
+        btn_fill.connect_clicked(glib::clone!(
+            #[weak]
+            boxes,
+            #[weak]
+            handles,
+            #[weak]
+            red,
+            #[weak]
+            green,
+            #[weak]
+            blue,
+            #[weak]
+            alpha,
+            #[weak]
+            toolbox,
+            #[weak]
+            pressed,
+            move |b| {
+                // if drawing, stops
+                if pressed.get() {
+                    handles.borrow().set_central_box_sensitivity(true);
+                    boxes.borrow_mut().is_drawing = false;
+                    pressed.set(false);
+                    // if its class is "pressed", then we do not want to continue to draw
+                    if let Some(_index) = b.css_classes().iter().position(|s| s == "pressed") {
+                        b.remove_css_class("pressed");
+                        return;
+                    } else {
+                        // otherwise, another button was clicked,
+                        // set every button's toolbox normal theme
+                        toolbox.borrow().remove_css_class("pressed");
+                    }
+                }
+
+                handles.borrow().set_central_box_sensitivity(false);
+                boxes.borrow_mut().create_new_box(
+                    red.get(),
+                    green.get(),
+                    blue.get(),
+                    alpha.get(),
+                    true,
+                );
+                pressed.set(true);
+                b.add_css_class("pressed");
+            }
+        ));
+
+        // Unfilled boxes
+        let btn_no_fill = self.add_rect_no_fill.clone();
+        btn_no_fill.connect_clicked(glib::clone!(
+            #[weak]
+            boxes,
+            #[weak]
+            handles,
+            #[weak]
+            red,
+            #[weak]
+            green,
+            #[weak]
+            blue,
+            #[weak]
+            alpha,
+            #[weak]
+            toolbox,
+            #[weak]
+            pressed,
+            move |b| {
+                // if drawing, stops
+                if pressed.get() {
+                    handles.borrow().set_central_box_sensitivity(true);
+                    boxes.borrow_mut().is_drawing = false;
+                    pressed.set(false);
+                    // if its class is "pressed", then we do not want to continue to draw
+                    if let Some(_index) = b.css_classes().iter().position(|s| s == "pressed") {
+                        b.remove_css_class("pressed");
+                        return;
+                    } else {
+                        // otherwise, another button was clicked,
+                        // set every button's toolbox normal theme
+                        toolbox.borrow().remove_css_class("pressed");
+                    }
+                }
+
+                handles.borrow().set_central_box_sensitivity(false);
+                boxes.borrow_mut().create_new_box(
+                    red.get(),
+                    green.get(),
+                    blue.get(),
+                    alpha.get(),
+                    false,
+                );
+                pressed.set(true);
+                b.add_css_class("pressed");
+            }
+        ));
+
+        // Free hand drawing
+        let add_freehand = self.add_freehand.clone();
+        add_freehand.connect_clicked(glib::clone!(
+            #[weak]
+            boxes,
+            #[weak]
+            handles,
+            #[weak]
+            red,
+            #[weak]
+            green,
+            #[weak]
+            blue,
+            #[weak]
+            alpha,
+            #[weak]
+            toolbox,
+            #[weak]
+            pressed,
+            move |b| {
+                // if drawing, stops
+                if pressed.get() {
+                    handles.borrow().set_central_box_sensitivity(true);
+                    boxes.borrow_mut().is_drawing = false;
+                    pressed.set(false);
+                    // if its class is "pressed", then we do not want to continue to draw
+                    if let Some(_index) = b.css_classes().iter().position(|s| s == "pressed") {
+                        b.remove_css_class("pressed");
+                        return;
+                    } else {
+                        // otherwise, another button was clicked,
+                        // set every button's toolbox normal theme
+                        toolbox.borrow().remove_css_class("pressed");
+                    }
+                }
+                // TODO: something strange when I redraw. The init is the same as the previous end
+                handles.borrow().set_central_box_sensitivity(false);
+                boxes.borrow_mut().create_new_freehand_draw(
+                    2.0,
+                    red.get(),
+                    green.get(),
+                    blue.get(),
+                    alpha.get(),
+                );
+                b.add_css_class("pressed");
+                pressed.set(true);
+            }
+        ));
+
+        // Draw arrow
+        let btn_arrow = self.add_arrow.clone();
+        btn_arrow.connect_clicked(glib::clone!(
+            #[weak]
+            boxes,
+            move |b| {
+                // if drawing, stops
+                if pressed.get() {
+                    handles.borrow().set_central_box_sensitivity(true);
+                    boxes.borrow_mut().is_drawing = false;
+                    pressed.set(false);
+                    // if its class is "pressed", then we do not want to continue to draw
+                    if let Some(_index) = b.css_classes().iter().position(|s| s == "pressed") {
+                        b.remove_css_class("pressed");
+                        return;
+                    } else {
+                        // otherwise, another button was clicked,
+                        // set every button's toolbox normal theme
+                        toolbox.borrow().remove_css_class("pressed");
+                    }
+                }
+
+                handles.borrow().set_central_box_sensitivity(false);
+                boxes.borrow_mut().create_new_arrow(
+                    10.0,
+                    2.0,
+                    red.get(),
+                    green.get(),
+                    blue.get(),
+                    alpha.get(),
+                );
+                b.add_css_class("pressed");
+                pressed.set(true);
+            }
+        ));
+
+        // draw boxes on central box
+        let draw_box = gtk::GestureDrag::new();
+        screenshot_box.add_controller(draw_box.clone());
+        draw_box.connect_drag_begin(glib::clone!(
+            #[weak]
+            drawing,
+            #[weak]
+            boxes,
+            #[weak]
+            top,
+            #[weak]
+            left,
+            move |_, x, y| {
+                if boxes.borrow().is_drawing() == true {
+                    boxes.borrow_mut().drag_begin(left.get() + x, top.get() + y);
+                    drawing.queue_draw(); // Request a redraw
+                }
+            }
+        ));
+        draw_box.connect_drag_update(glib::clone!(
+            #[weak]
+            boxes,
+            move |_, x, y| {
+                if boxes.borrow_mut().is_drawing() == true {
+                    boxes.borrow_mut().drag_update(x, y);
+                    drawing.queue_draw(); // Request a redraw
+                }
+            }
+        ));
+        draw_box.connect_drag_end(move |_, _, _| {
+            if boxes.borrow_mut().is_drawing() == true {
+                boxes.borrow_mut().drag_end();
+                // boxes.borrow_mut().is_drawing = false;
+                // handles.borrow().set_central_box_sensitivity(true);
+            }
+        });
 
         ////////////////////////////////////////////////
         // Copy screenshot to clipboard
@@ -363,6 +770,7 @@ impl RustshotGui {
             let window = self.window.clone();
             let (screen_x, screen_y) = (self.x.clone(), self.y.clone());
             let (screen_w, screen_h) = (self.w.clone(), self.h.clone());
+            let toolbox = self.toolbox.clone();
             move |_| {
                 // file chooser dialog
                 let dialog = gtk::FileDialog::builder()
@@ -407,153 +815,6 @@ impl RustshotGui {
                         }
                     }
                 });
-            }
-        });
-
-        ////////////////////////////////////////////////
-        // Draw rectangles on screenshot area
-        ////////////////////////////////////////////////
-        drawing.set_draw_func(glib::clone!(
-            #[weak]
-            boxes,
-            move |_, cr, _width, _height| {
-                boxes.borrow_mut().set_draw(&cr);
-            }
-        ));
-
-        // Filled circles to image
-        let btn_arc_fill = self.add_arc_fill.clone();
-        btn_arc_fill.connect_clicked(glib::clone!(
-            #[weak]
-            boxes,
-            #[weak]
-            handles,
-            #[weak]
-            red,
-            #[weak]
-            green,
-            #[weak]
-            blue,
-            move |_| {
-                handles.borrow().set_central_box_sensitivity(false);
-                boxes
-                    .borrow_mut()
-                    .create_new_arc(red.get(), green.get(), blue.get(), true);
-            }
-        ));
-
-        // Unfilled circles
-        let btn_arc_no_fill = self.add_arc_no_fill.clone();
-        btn_arc_no_fill.connect_clicked(glib::clone!(
-            #[weak]
-            boxes,
-            #[weak]
-            handles,
-            #[weak]
-            red,
-            #[weak]
-            green,
-            #[weak]
-            blue,
-            move |_| {
-                handles.borrow().set_central_box_sensitivity(false);
-                boxes
-                    .borrow_mut()
-                    .create_new_arc(red.get(), green.get(), blue.get(), false);
-            }
-        ));
-
-        // Filled boxes to image
-        let btn_fill = self.add_rect_fill.clone();
-        btn_fill.connect_clicked(glib::clone!(
-            #[weak]
-            boxes,
-            #[weak]
-            handles,
-            #[weak]
-            red,
-            #[weak]
-            green,
-            #[weak]
-            blue,
-            move |_| {
-                handles.borrow().set_central_box_sensitivity(false);
-                boxes
-                    .borrow_mut()
-                    .create_new_box(red.get(), green.get(), blue.get(), true);
-            }
-        ));
-
-        // Unfilled boxes
-        let btn_no_fill = self.add_rect_no_fill.clone();
-        btn_no_fill.connect_clicked(glib::clone!(
-            #[weak]
-            boxes,
-            #[weak]
-            handles,
-            #[weak]
-            red,
-            #[weak]
-            green,
-            #[weak]
-            blue,
-            move |_| {
-                handles.borrow().set_central_box_sensitivity(false);
-                boxes
-                    .borrow_mut()
-                    .create_new_box(red.get(), green.get(), blue.get(), false);
-            }
-        ));
-
-        // Draw arrow
-        let btn_arrow = self.add_arrow.clone();
-        btn_arrow.connect_clicked(glib::clone!(
-            #[weak]
-            boxes,
-            #[weak]
-            handles,
-            move |_| {
-                handles.borrow().set_central_box_sensitivity(false);
-                boxes
-                    .borrow_mut()
-                    .create_new_arrow(10.0, 2.0, red.get(), green.get(), blue.get());
-            }
-        ));
-
-        // draw boxes on central box
-        let draw_box = gtk::GestureDrag::new();
-        screenshot_box.add_controller(draw_box.clone());
-        draw_box.connect_drag_begin(glib::clone!(
-            #[weak]
-            drawing,
-            #[weak]
-            boxes,
-            #[weak]
-            top,
-            #[weak]
-            left,
-            move |_, x, y| {
-                if boxes.borrow().is_drawing() == true {
-                    boxes.borrow_mut().drag_begin(left.get() + x, top.get() + y);
-                    drawing.queue_draw(); // Request a redraw
-                }
-            }
-        ));
-        draw_box.connect_drag_update(glib::clone!(
-            #[weak]
-            boxes,
-            move |_, x, y| {
-                if boxes.borrow_mut().is_drawing() == true {
-                    boxes.borrow_mut().drag_update(x, y);
-                    drawing.queue_draw(); // Request a redraw
-                }
-            }
-        ));
-        draw_box.connect_drag_end(move |_, _, _| {
-            if boxes.borrow_mut().is_drawing() == true {
-                boxes.borrow_mut().drag_end();
-                boxes.borrow_mut().is_drawing = false;
-                handles.borrow().set_central_box_sensitivity(true);
             }
         });
 
@@ -883,7 +1144,7 @@ impl RustshotGui {
         // compute the full desktop size
         let monitor_width = vec_w.iter().max().expect("no maximum width");
         let monitor_height = vec_h.iter().max().expect("no maximum height");
-        println!("{},{}", &monitor_width, &monitor_width);
+        // println!("{},{}", &monitor_width, &monitor_width);
 
         (*monitor_width, *monitor_height)
     }
