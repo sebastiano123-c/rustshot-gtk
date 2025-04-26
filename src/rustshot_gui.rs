@@ -334,13 +334,20 @@ impl RustshotGui {
             #[weak]
             alpha,
             move |_btn| {
+                // get actual color
+                let color = gtk::gdk::RGBA::new(
+                    red.get() as f32,
+                    green.get() as f32,
+                    blue.get() as f32,
+                    alpha.get() as f32,
+                );
                 // create color dialog
                 let cancellable = gio::Cancellable::new();
                 let color_dialog = gtk::ColorDialog::new();
                 color_dialog.set_title("Pick color");
                 color_dialog.choose_rgba(
                     Some(&window),
-                    Some(&gtk::gdk::RGBA::BLACK),
+                    Some(&color),
                     Some(&cancellable),
                     // gtk::gio::Cancellable::NONE,
                     move |a| {
