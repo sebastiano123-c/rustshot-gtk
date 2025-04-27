@@ -47,16 +47,15 @@ for_window [app_id="rustshot-gtk"] border pixel 0, floating enable, fullscreen d
 ```
 
 ## TODO
-For version 0.4.0
-- create a settings button in the toolbox to adjust the brush, arrow, and lines width and size
-- add enumerated squares
+For version 0.5.0
 - add pixelated square boxes
-- add a way to catch eye attention when fullscreen is enabled.
-- add a button the toggle fullscreen back to previous size
+in fullscreen, is there a way to move the toolbox across the screen?
 
 ## NOT SO IMPORTANT FIXES
 - add the opportunity to draw screenshot area continuously (Not really important, probably will not be implemented)
-- reduce the toolbox icons size (I cannot go below 50px because the min size is 50 for buttons, probably will not be implemented)
+- reduce the toolbox buttons size (I cannot go below 50px because the min size is 50 for buttons, probably will not be implemented)
+- add a way to catch eye attention when fullscreen is enabled (now that the toolbox buttons are a lot, probably useless)
+- add a button the toggle fullscreen back to previous size (is this really useful?)
 
 ## Tested on
 - SwayWM

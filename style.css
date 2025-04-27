@@ -24,7 +24,7 @@
     font-weight: 300; /* Light weight */
 }
 
-window {
+.transparent {
   background: rgba(0, 0, 0, 0.0);
 }
 tooltip { font-family: Arial, sans-serif; font-size: 12px; }
@@ -40,7 +40,7 @@ tooltip { font-family: Arial, sans-serif; font-size: 12px; }
 }
 
 .corner-handle {
-  /* background: rgba(255, 51, 0, 0.5); */
+  background: rgba(0.0,0.0,0.0,0.0);
 }
 
 .corner-handle:hover {
@@ -64,6 +64,10 @@ font-family: Arial, "Font Awesome 6 Free";
 
 .toolbox-btn:hover {
   background: rgba(204, 0, 0, 0.9);
+}
+
+.subwin {
+  background:#333333;
 }
 
 

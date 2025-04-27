@@ -78,57 +78,52 @@ impl Handles {
         let screenshot_box = self.screenshot_box.clone();
 
         // define class
-        let css_class = "corner-handle";
+        let css_class = "transparent";
 
         // create handles top
         let top_spacer = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        top_spacer.add_css_class(css_class);
         top_spacer.set_height_request(self.handles_size);
         top_spacer.set_valign(gtk::Align::Start);
         let tl_handle = self.create_handle(0, 0);
         tl_handle.set_width_request(self.handles_size);
-        tl_handle.add_css_class(css_class);
         let tc_handle = self.create_handle(1, 0);
         tc_handle.set_hexpand(true);
-        tc_handle.add_css_class(css_class);
         let tr_handle = self.create_handle(2, 0);
         tr_handle.set_width_request(self.handles_size);
         tr_handle.set_halign(gtk::Align::End);
-        tr_handle.add_css_class(css_class);
         top_spacer.append(&tl_handle);
         top_spacer.append(&tc_handle);
         top_spacer.append(&tr_handle);
 
         // create handles center
         let center_spacer = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        center_spacer.add_css_class(css_class);
         center_spacer.set_vexpand(true);
         let cl_handle = self.create_handle(0, 1);
         cl_handle.set_width_request(self.handles_size);
-        cl_handle.add_css_class(css_class);
         let cc_handle = self.create_handle(1, 1);
         cc_handle.set_hexpand(true);
         // cc_handle.add_css_class(css_class);
         let cr_handle = self.create_handle(2, 1);
         cr_handle.set_width_request(self.handles_size);
         cr_handle.set_halign(gtk::Align::End);
-        cr_handle.add_css_class(css_class);
         center_spacer.append(&cl_handle);
         center_spacer.append(&cc_handle);
         center_spacer.append(&cr_handle);
 
         // create handles bottom
         let bottom_spacer = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        bottom_spacer.add_css_class(css_class);
         bottom_spacer.set_height_request(self.handles_size);
         bottom_spacer.set_valign(gtk::Align::End);
         let bl_handle = self.create_handle(0, 2);
         bl_handle.set_width_request(self.handles_size);
-        bl_handle.add_css_class(css_class);
         let bc_handle = self.create_handle(1, 2);
         bc_handle.set_hexpand(true);
-        bc_handle.add_css_class(css_class);
         let br_handle = self.create_handle(2, 2);
         br_handle.set_width_request(self.handles_size);
         br_handle.set_halign(gtk::Align::End);
-        br_handle.add_css_class(css_class);
         bottom_spacer.append(&bl_handle);
         bottom_spacer.append(&bc_handle);
         bottom_spacer.append(&br_handle);
@@ -153,6 +148,8 @@ impl Handles {
         // create handle
         if col == 1_u8 && row == 1_u8 {
             hdl = self.central_handle.clone();
+        } else {
+            hdl.add_css_class("corner-handle");
         }
 
         // clone

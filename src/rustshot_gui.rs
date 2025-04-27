@@ -47,7 +47,18 @@ pub struct RustshotGui {
     add_freehand: gtk::Button,
     add_numbered_circles: gtk::Button,
     change_color: gtk::Button,
+    settings: gtk::Button,
     draw_manager: Rc<RefCell<DrawingAreaManager>>,
+    arrow_size: Rc<Cell<f64>>,
+    arrow_width: Rc<Cell<f64>>,
+    freehand_size: Rc<Cell<f64>>,
+    line_size: Rc<Cell<f64>>,
+    numbered_circles_radius: Rc<Cell<f64>>,
+    numbered_circles_font_size: Rc<Cell<f64>>,
+    numbered_circles_font_color_r: Rc<Cell<f64>>,
+    numbered_circles_font_color_g: Rc<Cell<f64>>,
+    numbered_circles_font_color_b: Rc<Cell<f64>>,
+    settings_window: gtk::Window,
     // stretch handles
     handles: Rc<RefCell<Handles>>,
     // current color
@@ -76,17 +87,21 @@ impl RustshotGui {
         // create window object
         let win = gtk::ApplicationWindow::new(app);
         win.set_default_size(w, h);
+        win.add_css_class("transparent");
 
         // create main layout
         let overlay = gtk::Overlay::new();
+        overlay.add_css_class("transparent");
         win.set_child(Some(&overlay));
 
         // create drawing area
         let draw = gtk::DrawingArea::new();
+        draw.add_css_class("transparent");
         overlay.add_overlay(&draw);
 
         // screenshot boxes layout
         let layout: gtk::Box = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        layout.add_css_class("transparent");
         overlay.add_overlay(&layout);
 
         // top box
@@ -97,6 +112,7 @@ impl RustshotGui {
 
         // Central box contains left and right box
         let central_b: gtk::Box = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        central_b.add_css_class("transparent");
         central_b.set_vexpand(true);
         central_b.set_hexpand(true);
         // central_b.set_halign(gtk::Align::End);
@@ -160,8 +176,25 @@ impl RustshotGui {
         let add_freehand_btn = tb.create_toolbox_button("\u{f1fc}", Some("Freehand draw"));
         let add_num_circ_btn = tb.create_toolbox_button("\u{f06a}", Some("Add numbered circles"));
         let pick_color_btn = tb.create_toolbox_button("\u{f53f}", Some("Pick color"));
+        let settings_btn = tb.create_toolbox_button("\u{f013}", Some("Settings"));
         let copy_clipboard_btn = tb.create_toolbox_button("\u{f328}", Some(r#"Copy to clipboard"#)); // f24d, f030
         let save_to_file_btn = tb.create_toolbox_button("\u{f0c7}", Some(r#"Save image"#));
+
+        // settings
+        let init_arrow_size = Rc::new(Cell::new(10.0));
+        let init_arrow_width = Rc::new(Cell::new(2.0));
+        let init_freehand_size = Rc::new(Cell::new(2.0));
+        let init_line_size = Rc::new(Cell::new(2.0));
+        let init_numbered_circles_radius = Rc::new(Cell::new(20.0));
+        let init_numbered_circles_font_size = Rc::new(Cell::new(17.0));
+        let init_numbered_circles_font_color_r = Rc::new(Cell::new(1.0));
+        let init_numbered_circles_font_color_g = Rc::new(Cell::new(1.0));
+        let init_numbered_circles_font_color_b = Rc::new(Cell::new(1.0));
+
+        // create sub window
+        let subwin = gtk::Window::new();
+        subwin.present();
+        subwin.set_visible(false);
 
         // screenshot box start and size
         let sx = Rc::new(Cell::new(0.0));
@@ -230,8 +263,19 @@ impl RustshotGui {
             add_freehand: add_freehand_btn,
             add_numbered_circles: add_num_circ_btn,
             change_color: pick_color_btn,
+            settings: settings_btn,
             draw_manager: Rc::new(RefCell::new(boxes)),
             handles: Rc::new(RefCell::new(handles)),
+            arrow_size: init_arrow_size,
+            arrow_width: init_arrow_width,
+            freehand_size: init_freehand_size,
+            line_size: init_line_size,
+            numbered_circles_radius: init_numbered_circles_radius,
+            numbered_circles_font_size: init_numbered_circles_font_size,
+            numbered_circles_font_color_r: init_numbered_circles_font_color_r,
+            numbered_circles_font_color_g: init_numbered_circles_font_color_g,
+            numbered_circles_font_color_b: init_numbered_circles_font_color_b,
+            settings_window: subwin,
             // color
             red: Rc::new(Cell::new(red)),
             green: Rc::new(Cell::new(green)),
@@ -250,6 +294,122 @@ impl RustshotGui {
         // Gesture to create the toolbox
         ////////////////////////////////////////////////
         self.gesture_toolbox_buttons();
+    }
+
+    fn create_settings_window(&self) {
+        let arrow_size = self.arrow_size.clone();
+        let arrow_width = self.arrow_width.clone();
+        let freehand_size = self.freehand_size.clone();
+        let line_size = self.line_size.clone();
+        // let numbered_circles_radius = self.numbered_circles_radius.clone();
+        // let numbered_circles_font_size = self.numbered_circles_font_size.clone();
+        // let numbered_circles_font_color_r = self.numbered_circles_font_color_r.clone();
+        // let numbered_circles_font_color_g = self.numbered_circles_font_color_g.clone();
+        // let numbered_circles_font_color_b = self.numbered_circles_font_color_b.clone();
+
+        // create sub window
+        let subwin = self.settings_window.clone();
+        let gest = gtk::EventControllerKey::new();
+        subwin.add_controller(gest.clone());
+        gest.connect_key_pressed({
+            let subwin = subwin.clone();
+            move |_, _keyval, keycode, _state| {
+                if keycode == 9 {
+                    subwin.set_visible(false);
+                }
+                return glib::signal::Propagation::Proceed;
+            }
+        });
+        subwin.set_default_width(300);
+        // subwin.add_css_class("transparent");
+        subwin.set_title(Some(&"Settings"));
+        let vlayout = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        subwin.set_child(Some(&vlayout));
+        // line size
+        let hbox = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        vlayout.append(&hbox);
+        let lbl = gtk::Label::new(Some(&"Line size"));
+        let val = gtk::Scale::new(
+            gtk::Orientation::Horizontal,
+            Some(&gtk::Adjustment::new(
+                line_size.get(),
+                1.0,
+                20.0,
+                1.0,
+                10.0,
+                2.0,
+            )),
+        );
+        val.connect_value_changed(move |val| {
+            // println!("{}", val.value());
+            line_size.set(val.value());
+        });
+        val.set_hexpand(true);
+        hbox.append(&lbl);
+        hbox.append(&val);
+        // Arrow size
+        let hbox = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        vlayout.append(&hbox);
+        let lbl = gtk::Label::new(Some(&"Arrow size"));
+        let val = gtk::Scale::new(
+            gtk::Orientation::Horizontal,
+            Some(&gtk::Adjustment::new(
+                arrow_size.get(),
+                10.0,
+                30.0,
+                1.0,
+                10.0,
+                2.0,
+            )),
+        );
+        val.connect_value_changed(move |val| {
+            arrow_size.set(val.value());
+        });
+        val.set_hexpand(true);
+        hbox.append(&lbl);
+        hbox.append(&val);
+        // Arrow width
+        let hbox = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        vlayout.append(&hbox);
+        let lbl = gtk::Label::new(Some(&"Arrow width"));
+        let val = gtk::Scale::new(
+            gtk::Orientation::Horizontal,
+            Some(&gtk::Adjustment::new(
+                arrow_width.get(),
+                1.0,
+                20.0,
+                1.0,
+                10.0,
+                2.0,
+            )),
+        );
+        val.connect_value_changed(move |val| {
+            arrow_width.set(val.value());
+        });
+        val.set_hexpand(true);
+        hbox.append(&lbl);
+        hbox.append(&val);
+        // free hand size
+        let hbox = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        vlayout.append(&hbox);
+        let lbl = gtk::Label::new(Some(&"Freehand size"));
+        let val = gtk::Scale::new(
+            gtk::Orientation::Horizontal,
+            Some(&gtk::Adjustment::new(
+                freehand_size.get(),
+                1.0,
+                20.0,
+                1.0,
+                10.0,
+                2.0,
+            )),
+        );
+        val.connect_value_changed(move |val| {
+            freehand_size.set(val.value());
+        });
+        val.set_hexpand(true);
+        hbox.append(&lbl);
+        hbox.append(&val);
     }
 
     fn gesture_toolbox_buttons(&self) {
@@ -295,6 +455,7 @@ impl RustshotGui {
         window.add_controller(keyboard_ctrl.clone());
         keyboard_ctrl.connect_key_pressed({
             let window = self.window.clone();
+            let subwin = self.settings_window.clone();
             let pressed = Rc::clone(&pressed);
             let handles = Rc::clone(&handles);
             let boxes = Rc::clone(&boxes);
@@ -302,12 +463,14 @@ impl RustshotGui {
             move |_, _keyval, keycode, _state| {
                 // if 'esc' is pressed
                 if keycode == 9 {
+                    subwin.set_visible(false);
                     if pressed.get() == true {
                         handles.borrow().set_central_box_sensitivity(true);
                         boxes.borrow_mut().is_drawing = false;
                         pressed.set(false);
                         toolbox.remove_css_class("pressed");
                     } else {
+                        subwin.destroy();
                         window.destroy();
                         return glib::signal::Propagation::Stop;
                     }
@@ -315,6 +478,55 @@ impl RustshotGui {
                 glib::signal::Propagation::Proceed
             }
         });
+
+        ////////////////////////////////////////////////
+        // Settings
+        ////////////////////////////////////////////////
+        let arrow_size = self.arrow_size.clone();
+        let arrow_width = self.arrow_width.clone();
+        let freehand_size = self.freehand_size.clone();
+        let line_size = self.line_size.clone();
+        let numbered_circles_radius = self.numbered_circles_radius.clone();
+        let numbered_circles_font_size = self.numbered_circles_font_size.clone();
+        let numbered_circles_font_color_r = self.numbered_circles_font_color_r.clone();
+        let numbered_circles_font_color_g = self.numbered_circles_font_color_g.clone();
+        let numbered_circles_font_color_b = self.numbered_circles_font_color_b.clone();
+        let set_btn = self.settings.clone();
+
+        // create sub window
+        self.create_settings_window();
+        let subwin = self.settings_window.clone();
+        set_btn.connect_clicked(glib::clone!(
+            #[weak]
+            subwin,
+            #[weak]
+            pressed,
+            #[weak]
+            toolbox,
+            move |b| {
+                // if drawing, stops
+                if pressed.get() {
+                    // handles.borrow().set_central_box_sensitivity(true);
+                    pressed.set(false);
+                    subwin.set_visible(false);
+                    // subwin.add_css_class("transparent");
+                    // if its class is "pressed", then we do not want to continue to draw
+                    if let Some(_index) = b.css_classes().iter().position(|s| s == "pressed") {
+                        b.remove_css_class("pressed");
+                        return;
+                    } else {
+                        // otherwise, another button was clicked,
+                        // set every button's toolbox normal theme
+                        toolbox.borrow().remove_css_class("pressed");
+                    }
+                }
+                // handles.borrow().set_central_box_sensitivity(false);
+                b.add_css_class("pressed");
+                // subwin.add_css_class("subwin");
+                pressed.set(true);
+                subwin.set_visible(true);
+            }
+        ));
 
         ////////////////////////////////////////////////
         // Change color
@@ -385,6 +597,8 @@ impl RustshotGui {
         let add_numbered_circles = self.add_numbered_circles.clone();
         add_numbered_circles.connect_clicked(glib::clone!(
             #[weak]
+            subwin,
+            #[weak]
             boxes,
             #[weak]
             handles,
@@ -406,6 +620,7 @@ impl RustshotGui {
                     handles.borrow().set_central_box_sensitivity(true);
                     boxes.borrow_mut().is_drawing = false;
                     pressed.set(false);
+                    subwin.set_visible(false);
                     // if its class is "pressed", then we do not want to continue to draw
                     if let Some(_index) = b.css_classes().iter().position(|s| s == "pressed") {
                         b.remove_css_class("pressed");
@@ -418,11 +633,11 @@ impl RustshotGui {
                 }
                 handles.borrow().set_central_box_sensitivity(false);
                 boxes.borrow_mut().create_new_numbered_circle(
-                    20.0,
-                    17.0,
-                    1.0,
-                    1.0,
-                    1.0,
+                    numbered_circles_radius.get(),
+                    numbered_circles_font_size.get(),
+                    numbered_circles_font_color_r.get(),
+                    numbered_circles_font_color_g.get(),
+                    numbered_circles_font_color_b.get(),
                     red.get(),
                     green.get(),
                     blue.get(),
@@ -437,6 +652,8 @@ impl RustshotGui {
         let btn_line = self.add_line.clone();
         btn_line.connect_clicked(glib::clone!(
             #[weak]
+            subwin,
+            #[weak]
             boxes,
             #[weak]
             handles,
@@ -458,6 +675,7 @@ impl RustshotGui {
                     handles.borrow().set_central_box_sensitivity(true);
                     boxes.borrow_mut().is_drawing = false;
                     pressed.set(false);
+                    subwin.set_visible(false);
                     // if its class is "pressed", then we do not want to continue to draw
                     if let Some(_index) = b.css_classes().iter().position(|s| s == "pressed") {
                         b.remove_css_class("pressed");
@@ -470,7 +688,7 @@ impl RustshotGui {
                 }
                 handles.borrow().set_central_box_sensitivity(false);
                 boxes.borrow_mut().create_new_line(
-                    2.0,
+                    line_size.get(),
                     red.get(),
                     green.get(),
                     blue.get(),
@@ -485,6 +703,8 @@ impl RustshotGui {
         let btn_arc_fill = self.add_arc_fill.clone();
         btn_arc_fill.connect_clicked(glib::clone!(
             #[weak]
+            subwin,
+            #[weak]
             boxes,
             #[weak]
             handles,
@@ -506,6 +726,7 @@ impl RustshotGui {
                     handles.borrow().set_central_box_sensitivity(true);
                     boxes.borrow_mut().is_drawing = false;
                     pressed.set(false);
+                    subwin.set_visible(false);
                     // if its class is "pressed", then we do not want to continue to draw
                     if let Some(_index) = b.css_classes().iter().position(|s| s == "pressed") {
                         b.remove_css_class("pressed");
@@ -535,6 +756,8 @@ impl RustshotGui {
         let btn_arc_no_fill = self.add_arc_no_fill.clone();
         btn_arc_no_fill.connect_clicked(glib::clone!(
             #[weak]
+            subwin,
+            #[weak]
             boxes,
             #[weak]
             handles,
@@ -556,6 +779,7 @@ impl RustshotGui {
                     handles.borrow().set_central_box_sensitivity(true);
                     boxes.borrow_mut().is_drawing = false;
                     pressed.set(false);
+                    subwin.set_visible(false);
                     // if its class is "pressed", then we do not want to continue to draw
                     if let Some(_index) = b.css_classes().iter().position(|s| s == "pressed") {
                         b.remove_css_class("pressed");
@@ -585,6 +809,8 @@ impl RustshotGui {
         let btn_fill = self.add_rect_fill.clone();
         btn_fill.connect_clicked(glib::clone!(
             #[weak]
+            subwin,
+            #[weak]
             boxes,
             #[weak]
             handles,
@@ -606,6 +832,7 @@ impl RustshotGui {
                     handles.borrow().set_central_box_sensitivity(true);
                     boxes.borrow_mut().is_drawing = false;
                     pressed.set(false);
+                    subwin.set_visible(false);
                     // if its class is "pressed", then we do not want to continue to draw
                     if let Some(_index) = b.css_classes().iter().position(|s| s == "pressed") {
                         b.remove_css_class("pressed");
@@ -634,6 +861,8 @@ impl RustshotGui {
         let btn_no_fill = self.add_rect_no_fill.clone();
         btn_no_fill.connect_clicked(glib::clone!(
             #[weak]
+            subwin,
+            #[weak]
             boxes,
             #[weak]
             handles,
@@ -655,6 +884,7 @@ impl RustshotGui {
                     handles.borrow().set_central_box_sensitivity(true);
                     boxes.borrow_mut().is_drawing = false;
                     pressed.set(false);
+                    subwin.set_visible(false);
                     // if its class is "pressed", then we do not want to continue to draw
                     if let Some(_index) = b.css_classes().iter().position(|s| s == "pressed") {
                         b.remove_css_class("pressed");
@@ -683,6 +913,8 @@ impl RustshotGui {
         let add_freehand = self.add_freehand.clone();
         add_freehand.connect_clicked(glib::clone!(
             #[weak]
+            subwin,
+            #[weak]
             boxes,
             #[weak]
             handles,
@@ -704,6 +936,7 @@ impl RustshotGui {
                     handles.borrow().set_central_box_sensitivity(true);
                     boxes.borrow_mut().is_drawing = false;
                     pressed.set(false);
+                    subwin.set_visible(false);
                     // if its class is "pressed", then we do not want to continue to draw
                     if let Some(_index) = b.css_classes().iter().position(|s| s == "pressed") {
                         b.remove_css_class("pressed");
@@ -717,7 +950,7 @@ impl RustshotGui {
                 // TODO: something strange when I redraw. The init is the same as the previous end
                 handles.borrow().set_central_box_sensitivity(false);
                 boxes.borrow_mut().create_new_freehand_draw(
-                    2.0,
+                    freehand_size.get(),
                     red.get(),
                     green.get(),
                     blue.get(),
@@ -732,6 +965,8 @@ impl RustshotGui {
         let btn_arrow = self.add_arrow.clone();
         btn_arrow.connect_clicked(glib::clone!(
             #[weak]
+            subwin,
+            #[weak]
             boxes,
             move |b| {
                 // if drawing, stops
@@ -739,6 +974,7 @@ impl RustshotGui {
                     handles.borrow().set_central_box_sensitivity(true);
                     boxes.borrow_mut().is_drawing = false;
                     pressed.set(false);
+                    subwin.set_visible(false);
                     // if its class is "pressed", then we do not want to continue to draw
                     if let Some(_index) = b.css_classes().iter().position(|s| s == "pressed") {
                         b.remove_css_class("pressed");
@@ -752,8 +988,8 @@ impl RustshotGui {
 
                 handles.borrow().set_central_box_sensitivity(false);
                 boxes.borrow_mut().create_new_arrow(
-                    10.0,
-                    2.0,
+                    arrow_size.get(),
+                    arrow_width.get(),
                     red.get(),
                     green.get(),
                     blue.get(),
@@ -769,6 +1005,8 @@ impl RustshotGui {
         screenshot_box.add_controller(draw_box.clone());
         draw_box.connect_drag_begin(glib::clone!(
             #[weak]
+            subwin,
+            #[weak]
             drawing,
             #[weak]
             boxes,
@@ -780,6 +1018,7 @@ impl RustshotGui {
                 if boxes.borrow().is_drawing() == true {
                     boxes.borrow_mut().drag_begin(left.get() + x, top.get() + y);
                     drawing.queue_draw(); // Request a redraw
+                    subwin.set_visible(false);
                 }
             }
         ));
@@ -857,6 +1096,7 @@ impl RustshotGui {
             let (screen_w, screen_h) = (self.w.clone(), self.h.clone());
             let toolbox = self.toolbox.clone();
             move |_| {
+                // TODO: add year-month-day-hour-minute-seconds.png format
                 // file chooser dialog
                 let dialog = gtk::FileDialog::builder()
                     .title("Save File")

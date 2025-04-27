@@ -398,7 +398,7 @@ impl DrawingAreaManager {
     fn draw_numbered_circle(text: &str, arc: &DrawingAreaNumberedCircle, cr: &cairo::Context) {
         cr.set_source_rgba(arc.red, arc.green, arc.blue, arc.alpha); // Set color RGBA
         cr.arc(arc.x0, arc.y0, arc.radius, 0.0, 2.0 * f64::consts::PI);
-        let _ = cr.fill();
+        cr.fill().expect("No numbered circle fill to unwrap");
         cr.stroke().unwrap();
 
         // Set text properties
@@ -414,6 +414,7 @@ impl DrawingAreaManager {
         );
         cr.move_to(text_x, text_y);
         cr.show_text(text).expect("Failed to show text");
+        cr.stroke().unwrap();
     }
 
     fn draw_line(line: &DrawingAreaLine, cr: &cairo::Context) {
@@ -465,7 +466,7 @@ impl DrawingAreaManager {
             2.0 * f64::consts::PI,
         );
         if arc.fill {
-            let _ = cr.fill();
+            cr.fill().expect("No arc fill to unwrap");
         }
         cr.stroke().unwrap();
     }
