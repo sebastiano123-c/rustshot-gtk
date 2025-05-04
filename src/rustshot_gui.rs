@@ -439,7 +439,6 @@ impl RustshotGui {
         let left_box = self.left_box.clone();
         let right_box = self.right_box.clone();
         let bottom_box = self.bottom_box.clone();
-        let screenshot_box = self.screenshot_box.clone();
         let drawing = self.drawing.clone();
         let full_w = self.full_w;
         let full_h = self.full_h;
