@@ -51,6 +51,9 @@ For version 0.5.0
 - add pixelated square boxes
 in fullscreen, is there a way to move the toolbox across the screen?
 
+## BUG 
+- when changing freehand size, it also changes the unfilled boxes size.
+
 ## NOT SO IMPORTANT FIXES
 - add the opportunity to draw screenshot area continuously (Not really important, probably will not be implemented)
 - reduce the toolbox buttons size (I cannot go below 50px because the min size is 50 for buttons, probably will not be implemented)

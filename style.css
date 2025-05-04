@@ -35,7 +35,7 @@ tooltip { font-family: Arial, sans-serif; font-size: 12px; }
 }
 
 .gray-box {
-  background: rgba(10, 10, 10, 0.8);
+  background: rgba(50, 50, 50, 0.8);
   /* border: 2px solid red; */
 }
 

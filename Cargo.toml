@@ -5,5 +5,5 @@ edition = "2024"
 
 [dependencies]
 gtk = { git = "https://github.com/gtk-rs/gtk4-rs.git", package = "gtk4", features = [
-  "v4_10",
+  "v4_18",
 ] }
