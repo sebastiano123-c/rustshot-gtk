@@ -28,6 +28,7 @@ pub struct Handles {
     full_w: f64,
     full_h: f64,
     central_handle: gtk::Box,
+    central_handle_sensitive: Rc<Cell<bool>>,
     toolbox: Toolbox,
 }
 
@@ -67,6 +68,7 @@ impl Handles {
             h: screenshot_h,
             handles_size: handles_sz,
             central_handle: gtk::Box::new(gtk::Orientation::Horizontal, 0),
+            central_handle_sensitive: Rc::new(Cell::new(true)),
             full_w: full_w,
             full_h: full_h,
             toolbox: toolbox,
@@ -134,18 +136,22 @@ impl Handles {
         screenshot_box.append(&bottom_spacer);
     }
 
-    // pub fn free_(&self) {
-    //     // free screenshot box from handles
-    // }
+    pub fn add_controller_to_central_handle(&self, gest: gtk::GestureDrag) {
+        self.central_handle.add_controller(gest);
+    }
 
-    pub fn set_central_box_sensitivity(&self, sensitive: bool) {
-        let c = self.central_handle.clone();
-        c.set_sensitive(sensitive);
+    pub fn set_central_box_sensitivity(&mut self, sensitive: bool) {
+        // let c = self.central_handle.clone();
+        // c.set_sensitive(sensitive);
+        self.central_handle_sensitive.set(sensitive);
+        println!("sens set to {}", sensitive);
     }
 
     fn create_handle(&self, col: u8, row: u8) -> gtk::Box {
-        let mut hdl: gtk::Box = gtk::Box::new(gtk::Orientation::Horizontal, 0);
         // create handle
+        let mut hdl: gtk::Box = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+
+        // discriminate if is the central handle or not
         if col == 1_u8 && row == 1_u8 {
             hdl = self.central_handle.clone();
         } else {
@@ -159,6 +165,7 @@ impl Handles {
             self.bottom_box.clone(),
             self.right_box.clone(),
         );
+        let sensitive = self.central_handle_sensitive.clone();
 
         // margins
         // let (full_w, full_h) = (self.full_w, self.full_h);
@@ -216,7 +223,7 @@ impl Handles {
                         l += x;
                     }
                     1_u8 => {
-                        if row == 1_u8 {
+                        if row == 1_u8 && sensitive.get() {
                             l += x;
                             r -= x;
                             t += y;

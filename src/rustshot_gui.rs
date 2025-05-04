@@ -481,7 +481,7 @@ impl RustshotGui {
                 if keycode == 9 {
                     subwin.set_visible(false);
                     if pressed.get() == true {
-                        handles.borrow().set_central_box_sensitivity(true);
+                        handles.borrow_mut().set_central_box_sensitivity(true);
                         boxes.borrow_mut().is_drawing = false;
                         pressed.set(false);
                         toolbox.remove_css_class("pressed");
@@ -528,7 +528,7 @@ impl RustshotGui {
             move |b| {
                 // if drawing, stops
                 if pressed.get() {
-                    // handles.borrow().set_central_box_sensitivity(true);
+                    // handles.borrow_mut().set_central_box_sensitivity(true);
                     pressed.set(false);
                     subwin.set_visible(false);
                     // subwin.add_css_class("transparent");
@@ -542,7 +542,7 @@ impl RustshotGui {
                         toolbox.borrow().remove_css_class("pressed");
                     }
                 }
-                // handles.borrow().set_central_box_sensitivity(false);
+                // handles.borrow_mut().set_central_box_sensitivity(false);
                 b.add_css_class("pressed");
                 // subwin.add_css_class("subwin");
                 pressed.set(true);
@@ -639,7 +639,7 @@ impl RustshotGui {
             move |b| {
                 // if drawing, stops
                 if pressed.get() {
-                    handles.borrow().set_central_box_sensitivity(true);
+                    handles.borrow_mut().set_central_box_sensitivity(true);
                     boxes.borrow_mut().is_drawing = false;
                     pressed.set(false);
                     subwin.set_visible(false);
@@ -653,7 +653,7 @@ impl RustshotGui {
                         toolbox.borrow().remove_css_class("pressed");
                     }
                 }
-                handles.borrow().set_central_box_sensitivity(false);
+                handles.borrow_mut().set_central_box_sensitivity(false);
                 boxes.borrow_mut().create_new_numbered_circle(
                     numbered_circles_radius.get(),
                     numbered_circles_font_size.get(),
@@ -694,7 +694,7 @@ impl RustshotGui {
             move |b| {
                 // if drawing, stops
                 if pressed.get() {
-                    handles.borrow().set_central_box_sensitivity(true);
+                    handles.borrow_mut().set_central_box_sensitivity(true);
                     boxes.borrow_mut().is_drawing = false;
                     pressed.set(false);
                     subwin.set_visible(false);
@@ -708,7 +708,7 @@ impl RustshotGui {
                         toolbox.borrow().remove_css_class("pressed");
                     }
                 }
-                handles.borrow().set_central_box_sensitivity(false);
+                handles.borrow_mut().set_central_box_sensitivity(false);
                 boxes.borrow_mut().create_new_line(
                     line_size.get(),
                     red.get(),
@@ -745,7 +745,7 @@ impl RustshotGui {
             move |b| {
                 // if drawing, stops
                 if pressed.get() {
-                    handles.borrow().set_central_box_sensitivity(true);
+                    handles.borrow_mut().set_central_box_sensitivity(true);
                     boxes.borrow_mut().is_drawing = false;
                     pressed.set(false);
                     subwin.set_visible(false);
@@ -760,7 +760,7 @@ impl RustshotGui {
                     }
                 }
 
-                handles.borrow().set_central_box_sensitivity(false);
+                handles.borrow_mut().set_central_box_sensitivity(false);
                 boxes.borrow_mut().create_new_arc(
                     red.get(),
                     green.get(),
@@ -798,7 +798,7 @@ impl RustshotGui {
             move |b| {
                 // if drawing, stops
                 if pressed.get() {
-                    handles.borrow().set_central_box_sensitivity(true);
+                    handles.borrow_mut().set_central_box_sensitivity(true);
                     boxes.borrow_mut().is_drawing = false;
                     pressed.set(false);
                     subwin.set_visible(false);
@@ -813,7 +813,7 @@ impl RustshotGui {
                     }
                 }
 
-                handles.borrow().set_central_box_sensitivity(false);
+                handles.borrow_mut().set_central_box_sensitivity(false);
                 boxes.borrow_mut().create_new_arc(
                     red.get(),
                     green.get(),
@@ -851,7 +851,7 @@ impl RustshotGui {
             move |b| {
                 // if drawing, stops
                 if pressed.get() {
-                    handles.borrow().set_central_box_sensitivity(true);
+                    handles.borrow_mut().set_central_box_sensitivity(true);
                     boxes.borrow_mut().is_drawing = false;
                     pressed.set(false);
                     subwin.set_visible(false);
@@ -866,7 +866,7 @@ impl RustshotGui {
                     }
                 }
 
-                handles.borrow().set_central_box_sensitivity(false);
+                handles.borrow_mut().set_central_box_sensitivity(false);
                 boxes.borrow_mut().create_new_box(
                     red.get(),
                     green.get(),
@@ -903,7 +903,7 @@ impl RustshotGui {
             move |b| {
                 // if drawing, stops
                 if pressed.get() {
-                    handles.borrow().set_central_box_sensitivity(true);
+                    handles.borrow_mut().set_central_box_sensitivity(true);
                     boxes.borrow_mut().is_drawing = false;
                     pressed.set(false);
                     subwin.set_visible(false);
@@ -918,7 +918,7 @@ impl RustshotGui {
                     }
                 }
 
-                handles.borrow().set_central_box_sensitivity(false);
+                handles.borrow_mut().set_central_box_sensitivity(false);
                 boxes.borrow_mut().create_new_box(
                     red.get(),
                     green.get(),
@@ -955,7 +955,7 @@ impl RustshotGui {
             move |b| {
                 // if drawing, stops
                 if pressed.get() {
-                    handles.borrow().set_central_box_sensitivity(true);
+                    handles.borrow_mut().set_central_box_sensitivity(true);
                     boxes.borrow_mut().is_drawing = false;
                     pressed.set(false);
                     subwin.set_visible(false);
@@ -970,7 +970,7 @@ impl RustshotGui {
                     }
                 }
                 // TODO: something strange when I redraw. The init is the same as the previous end
-                handles.borrow().set_central_box_sensitivity(false);
+                handles.borrow_mut().set_central_box_sensitivity(false);
                 boxes.borrow_mut().create_new_freehand_draw(
                     freehand_size.get(),
                     red.get(),
@@ -990,10 +990,12 @@ impl RustshotGui {
             subwin,
             #[weak]
             boxes,
+            #[weak]
+            handles,
             move |b| {
                 // if drawing, stops
                 if pressed.get() {
-                    handles.borrow().set_central_box_sensitivity(true);
+                    handles.borrow_mut().set_central_box_sensitivity(true);
                     boxes.borrow_mut().is_drawing = false;
                     pressed.set(false);
                     subwin.set_visible(false);
@@ -1008,7 +1010,7 @@ impl RustshotGui {
                     }
                 }
 
-                handles.borrow().set_central_box_sensitivity(false);
+                handles.borrow_mut().set_central_box_sensitivity(false);
                 boxes.borrow_mut().create_new_arrow(
                     arrow_size.get(),
                     arrow_width.get(),
@@ -1023,9 +1025,12 @@ impl RustshotGui {
         ));
 
         // draw boxes on central box
-        let draw_box = gtk::GestureDrag::new();
-        screenshot_box.add_controller(draw_box.clone());
-        draw_box.connect_drag_begin(glib::clone!(
+        let draw_gesture = gtk::GestureDrag::new();
+        handles
+            .borrow()
+            .add_controller_to_central_handle(draw_gesture.clone());
+        // screenshot_box.add_controller(draw_box.clone());
+        draw_gesture.connect_drag_begin(glib::clone!(
             #[weak]
             subwin,
             #[weak]
@@ -1044,7 +1049,7 @@ impl RustshotGui {
                 }
             }
         ));
-        draw_box.connect_drag_update(glib::clone!(
+        draw_gesture.connect_drag_update(glib::clone!(
             #[weak]
             boxes,
             move |_, x, y| {
@@ -1054,11 +1059,11 @@ impl RustshotGui {
                 }
             }
         ));
-        draw_box.connect_drag_end(move |_, _, _| {
+        draw_gesture.connect_drag_end(move |_, _, _| {
             if boxes.borrow_mut().is_drawing() == true {
                 boxes.borrow_mut().drag_end();
                 // boxes.borrow_mut().is_drawing = false;
-                // handles.borrow().set_central_box_sensitivity(true);
+                // handles.borrow_mut().set_central_box_sensitivity(true);
             }
         });
 
@@ -1378,24 +1383,6 @@ impl RustshotGui {
         ));
     }
 
-    // fn gesture_exit(&self) {
-    //     let window = self.window.clone();
-    //     let keyboard_ctrl = gtk::EventControllerKey::new();
-    //     window.add_controller(keyboard_ctrl.clone());
-    //     keyboard_ctrl.connect_key_pressed({
-    //         let window = self.window.clone();
-    //         move |_, _keyval, keycode, _state| {
-    //             // if 'esc' is pressed
-    //             if keycode == 9 {
-    //                 window.destroy();
-    //                 glib::signal::Propagation::Stop
-    //             } else {
-    //                 glib::signal::Propagation::Proceed
-    //             }
-    //         }
-    //     });
-    // }
-    //
     fn take_screenshot(x: i32, y: i32, w: i32, h: i32) {
         // build the grim string like "10,20 400x900"
         // we need to subtract the border of the screenbox (which is 2px, see style.css)

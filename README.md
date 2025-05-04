@@ -51,9 +51,6 @@ For version 0.5.0
 - add pixelated square boxes
 - move the toolbox across the screen when in fullscreen 
 
-## BUG 
-- allow exclude the screenshot handlers for drawing connect event
-
 ## NOT SO IMPORTANT FIXES
 - add the opportunity to draw screenshot area continuously (Not really important, probably will not be implemented)
 - reduce the toolbox buttons size (I cannot go below 50px because the min size is 50 for buttons, probably will not be implemented)
