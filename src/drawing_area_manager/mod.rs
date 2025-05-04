@@ -71,7 +71,7 @@ struct DrawingAreaArc {
     green: f64,
     blue: f64,
     alpha: f64,
-    fill: bool,
+    border: Option<f64>,
 }
 
 #[derive(Debug, Clone)]
@@ -85,7 +85,7 @@ struct DrawingAreaBox {
     green: f64,
     blue: f64,
     alpha: f64,
-    fill: bool,
+    border: Option<f64>,
 }
 
 #[derive(Debug, Clone)]
@@ -224,7 +224,14 @@ impl DrawingAreaManager {
         self.is_drawing = true;
     }
 
-    pub fn create_new_arc(&mut self, red: f64, green: f64, blue: f64, alpha: f64, fill_rect: bool) {
+    pub fn create_new_arc(
+        &mut self,
+        red: f64,
+        green: f64,
+        blue: f64,
+        alpha: f64,
+        border_size: Option<f64>,
+    ) {
         self.reset();
 
         self.current_arc = Some(DrawingAreaArc {
@@ -236,14 +243,21 @@ impl DrawingAreaManager {
             blue,
             alpha,
             drawing: false,
-            fill: fill_rect,
+            border: border_size,
         });
 
         // emit signal for drawing boxes
         self.is_drawing = true;
     }
 
-    pub fn create_new_box(&mut self, red: f64, green: f64, blue: f64, alpha: f64, fill_rect: bool) {
+    pub fn create_new_box(
+        &mut self,
+        red: f64,
+        green: f64,
+        blue: f64,
+        alpha: f64,
+        border_size: Option<f64>,
+    ) {
         self.reset();
         self.current_box = Some(DrawingAreaBox {
             start_x: 0.0,
@@ -255,7 +269,7 @@ impl DrawingAreaManager {
             blue,
             alpha,
             drawing: false,
-            fill: fill_rect,
+            border: border_size,
         });
 
         // emit signal for drawing boxes
@@ -465,7 +479,9 @@ impl DrawingAreaManager {
             0.0,
             2.0 * f64::consts::PI,
         );
-        if arc.fill {
+        if let Some(border_size) = arc.border {
+            cr.set_line_width(border_size);
+        } else {
             cr.fill().expect("No arc fill to unwrap");
         }
         cr.stroke().unwrap();
@@ -474,8 +490,10 @@ impl DrawingAreaManager {
     fn draw_box(rect: &DrawingAreaBox, cr: &cairo::Context) {
         cr.set_source_rgba(rect.red, rect.green, rect.blue, rect.alpha); // Set color RGBA
         cr.rectangle(rect.start_x, rect.start_y, rect.end_x, rect.end_y);
-        if rect.fill {
-            let _ = cr.fill();
+        if let Some(border_size) = rect.border {
+            cr.set_line_width(border_size);
+        } else {
+            cr.fill().expect("No arc fill to unwrap");
         }
         cr.stroke().unwrap();
     }
@@ -546,7 +564,7 @@ impl DrawingAreaManager {
         if let Some(current_box) = &mut self.current_box {
             self.boxes.push(current_box.clone());
             let (f, r, g, b, a) = (
-                current_box.fill,
+                current_box.border,
                 current_box.red,
                 current_box.green,
                 current_box.blue,
@@ -557,7 +575,7 @@ impl DrawingAreaManager {
         if let Some(current_arc) = &mut self.current_arc {
             self.arcs.push(current_arc.clone());
             let (f, r, g, b, a) = (
-                current_arc.fill,
+                current_arc.border,
                 current_arc.red,
                 current_arc.green,
                 current_arc.blue,

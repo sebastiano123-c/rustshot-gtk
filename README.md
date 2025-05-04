@@ -49,10 +49,10 @@ for_window [app_id="rustshot-gtk"] border pixel 0, floating enable, fullscreen d
 ## TODO
 For version 0.5.0
 - add pixelated square boxes
-in fullscreen, is there a way to move the toolbox across the screen?
+- move the toolbox across the screen when in fullscreen 
 
 ## BUG 
-- when changing freehand size, it also changes the unfilled boxes size.
+- allow exclude the screenshot handlers for drawing connect event
 
 ## NOT SO IMPORTANT FIXES
 - add the opportunity to draw screenshot area continuously (Not really important, probably will not be implemented)

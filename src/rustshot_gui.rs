@@ -53,6 +53,8 @@ pub struct RustshotGui {
     arrow_width: Rc<Cell<f64>>,
     freehand_size: Rc<Cell<f64>>,
     line_size: Rc<Cell<f64>>,
+    box_border_size: Rc<Cell<f64>>,
+    arc_border_size: Rc<Cell<f64>>,
     numbered_circles_radius: Rc<Cell<f64>>,
     numbered_circles_font_size: Rc<Cell<f64>>,
     numbered_circles_font_color_r: Rc<Cell<f64>>,
@@ -185,6 +187,8 @@ impl RustshotGui {
         let init_arrow_width = Rc::new(Cell::new(2.0));
         let init_freehand_size = Rc::new(Cell::new(2.0));
         let init_line_size = Rc::new(Cell::new(2.0));
+        let init_box_border_size = Rc::new(Cell::new(2.0));
+        let init_arc_border_size = Rc::new(Cell::new(2.0));
         let init_numbered_circles_radius = Rc::new(Cell::new(20.0));
         let init_numbered_circles_font_size = Rc::new(Cell::new(17.0));
         let init_numbered_circles_font_color_r = Rc::new(Cell::new(1.0));
@@ -270,6 +274,8 @@ impl RustshotGui {
             arrow_width: init_arrow_width,
             freehand_size: init_freehand_size,
             line_size: init_line_size,
+            box_border_size: init_box_border_size,
+            arc_border_size: init_arc_border_size,
             numbered_circles_radius: init_numbered_circles_radius,
             numbered_circles_font_size: init_numbered_circles_font_size,
             numbered_circles_font_color_r: init_numbered_circles_font_color_r,
@@ -301,6 +307,8 @@ impl RustshotGui {
         let arrow_width = self.arrow_width.clone();
         let freehand_size = self.freehand_size.clone();
         let line_size = self.line_size.clone();
+        let box_border_size = self.box_border_size.clone();
+        let arc_border_size = self.arc_border_size.clone();
         // let numbered_circles_radius = self.numbered_circles_radius.clone();
         // let numbered_circles_font_size = self.numbered_circles_font_size.clone();
         // let numbered_circles_font_color_r = self.numbered_circles_font_color_r.clone();
@@ -320,83 +328,45 @@ impl RustshotGui {
                 return glib::signal::Propagation::Proceed;
             }
         });
-        subwin.set_default_width(300);
+        subwin.set_default_width(400);
         // subwin.add_css_class("transparent");
         subwin.set_title(Some(&"Settings"));
         let vlayout = gtk::Box::new(gtk::Orientation::Vertical, 0);
         subwin.set_child(Some(&vlayout));
         // line size
-        let hbox = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        let hbox = Self::create_settings_entry("Line size", line_size);
         vlayout.append(&hbox);
-        let lbl = gtk::Label::new(Some(&"Line size"));
-        let val = gtk::Scale::new(
-            gtk::Orientation::Horizontal,
-            Some(&gtk::Adjustment::new(
-                line_size.get(),
-                1.0,
-                20.0,
-                1.0,
-                10.0,
-                2.0,
-            )),
-        );
-        val.connect_value_changed(move |val| {
-            // println!("{}", val.value());
-            line_size.set(val.value());
-        });
-        val.set_hexpand(true);
-        hbox.append(&lbl);
-        hbox.append(&val);
         // Arrow size
-        let hbox = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        let hbox = Self::create_settings_entry("Arrow size", arrow_size);
         vlayout.append(&hbox);
-        let lbl = gtk::Label::new(Some(&"Arrow size"));
-        let val = gtk::Scale::new(
-            gtk::Orientation::Horizontal,
-            Some(&gtk::Adjustment::new(
-                arrow_size.get(),
-                10.0,
-                30.0,
-                1.0,
-                10.0,
-                2.0,
-            )),
-        );
-        val.connect_value_changed(move |val| {
-            arrow_size.set(val.value());
-        });
-        val.set_hexpand(true);
-        hbox.append(&lbl);
-        hbox.append(&val);
         // Arrow width
-        let hbox = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        let hbox = Self::create_settings_entry("Arrow width", arrow_width);
         vlayout.append(&hbox);
-        let lbl = gtk::Label::new(Some(&"Arrow width"));
-        let val = gtk::Scale::new(
-            gtk::Orientation::Horizontal,
-            Some(&gtk::Adjustment::new(
-                arrow_width.get(),
-                1.0,
-                20.0,
-                1.0,
-                10.0,
-                2.0,
-            )),
-        );
-        val.connect_value_changed(move |val| {
-            arrow_width.set(val.value());
-        });
-        val.set_hexpand(true);
-        hbox.append(&lbl);
-        hbox.append(&val);
         // free hand size
-        let hbox = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        let hbox = Self::create_settings_entry("Freehand size", freehand_size);
         vlayout.append(&hbox);
-        let lbl = gtk::Label::new(Some(&"Freehand size"));
+        // box border size
+        let hbox = Self::create_settings_entry("Box border", box_border_size);
+        vlayout.append(&hbox);
+        // arc border size
+        let hbox = Self::create_settings_entry("Circle border", arc_border_size);
+        vlayout.append(&hbox);
+    }
+
+    fn create_settings_entry(entry_label: &str, entry_rc_value: Rc<Cell<f64>>) -> gtk::Box {
+        // create box containing label, slide, and entry
+        let hbox = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        hbox.set_width_request(400);
+
+        // create label
+        let lbl = gtk::Label::new(Some(&entry_label));
+        lbl.set_width_request(100);
+
+        // create slide widget
         let val = gtk::Scale::new(
             gtk::Orientation::Horizontal,
             Some(&gtk::Adjustment::new(
-                freehand_size.get(),
+                entry_rc_value.get(),
                 1.0,
                 20.0,
                 1.0,
@@ -404,12 +374,58 @@ impl RustshotGui {
                 2.0,
             )),
         );
-        val.connect_value_changed(move |val| {
-            freehand_size.set(val.value());
-        });
         val.set_hexpand(true);
+        val.set_width_request(250);
+
+        // create entry
+        let ent = gtk::Entry::new();
+        ent.set_width_request(20);
+        ent.set_text(&entry_rc_value.get().to_string());
+
+        // function when slide change
+        val.connect_value_changed(glib::clone!(
+            #[weak]
+            ent,
+            #[weak]
+            entry_rc_value,
+            move |value| {
+                // update entry value
+                let print_res = format!("{:.1}", value.value());
+                ent.set_text(&print_res);
+
+                // update global value
+                entry_rc_value.set(value.value());
+            }
+        ));
+
+        // function when entry change
+        ent.connect_activate(glib::clone!(
+            #[weak]
+            val,
+            move |value| {
+                let text = &value.text();
+                match text.parse::<f64>() {
+                    Ok(num) => {
+                        // update global value
+                        entry_rc_value.set(num);
+
+                        // update entry value
+                        val.set_value(num);
+                    }
+                    Err(_) => {
+                        println!("Invalid input, not a valid f64.");
+                    }
+                }
+            }
+        ));
+
+        // append to entry box
         hbox.append(&lbl);
         hbox.append(&val);
+        hbox.append(&ent);
+
+        // return
+        hbox
     }
 
     fn gesture_toolbox_buttons(&self) {
@@ -491,6 +507,8 @@ impl RustshotGui {
         let numbered_circles_font_color_r = self.numbered_circles_font_color_r.clone();
         let numbered_circles_font_color_g = self.numbered_circles_font_color_g.clone();
         let numbered_circles_font_color_b = self.numbered_circles_font_color_b.clone();
+        let box_border_size = self.box_border_size.clone();
+        let arc_border_size = self.arc_border_size.clone();
         let set_btn = self.settings.clone();
 
         // create sub window
@@ -587,7 +605,7 @@ impl RustshotGui {
         ));
 
         ////////////////////////////////////////////////
-        // Draw rectangles on screenshot area
+        // Draw items on screenshot area
         ////////////////////////////////////////////////
         drawing.set_draw_func(glib::clone!(
             #[weak]
@@ -748,7 +766,7 @@ impl RustshotGui {
                     green.get(),
                     blue.get(),
                     alpha.get(),
-                    true,
+                    None,
                 );
 
                 b.add_css_class("pressed");
@@ -801,7 +819,7 @@ impl RustshotGui {
                     green.get(),
                     blue.get(),
                     alpha.get(),
-                    false,
+                    Some(arc_border_size.get()),
                 );
 
                 b.add_css_class("pressed");
@@ -854,7 +872,7 @@ impl RustshotGui {
                     green.get(),
                     blue.get(),
                     alpha.get(),
-                    true,
+                    None,
                 );
                 pressed.set(true);
                 b.add_css_class("pressed");
@@ -906,7 +924,7 @@ impl RustshotGui {
                     green.get(),
                     blue.get(),
                     alpha.get(),
-                    false,
+                    Some(box_border_size.get()),
                 );
                 pressed.set(true);
                 b.add_css_class("pressed");
