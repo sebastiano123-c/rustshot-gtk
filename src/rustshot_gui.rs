@@ -141,7 +141,6 @@ impl RustshotGui {
         let right_b: gtk::Box = gtk::Box::new(gtk::Orientation::Horizontal, 0);
         right_b.add_css_class("gray-box");
         right_b.set_halign(gtk::Align::End);
-        // right_b.set_width_request((full_w_f64 / 3.0) as i32);
         central_b.append(&right_b);
 
         // bottom box
@@ -1028,6 +1027,7 @@ impl RustshotGui {
         handles
             .borrow()
             .add_controller_to_central_handle(draw_gesture.clone());
+
         // screenshot_box.add_controller(draw_box.clone());
         draw_gesture.connect_drag_begin(glib::clone!(
             #[weak]
@@ -1042,7 +1042,10 @@ impl RustshotGui {
             left,
             move |_, x, y| {
                 if boxes.borrow().is_drawing() == true {
-                    boxes.borrow_mut().drag_begin(left.get() + x, top.get() + y);
+                    boxes
+                        .borrow_mut()
+                        // 10 is handle size
+                        .drag_begin(left.get() + 10.0 + x, top.get() + 10.0 + y);
                     drawing.queue_draw(); // Request a redraw
                     subwin.set_visible(false);
                 }

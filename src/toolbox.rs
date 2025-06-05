@@ -1,8 +1,4 @@
-// use gtk::glib;
 use gtk::prelude::*;
-// use gtk::{gdk, glib};
-// use std::cell::Cell;
-// use std::rc::Rc;
 
 #[derive(Clone, Debug)]
 pub struct Toolbox {
@@ -14,7 +10,6 @@ pub struct Toolbox {
     top_box: gtk::Box,
     left_box: gtk::Box,
     buttons_list: Vec<gtk::Button>,
-    // is_toolbox_drawn: bool,
 }
 
 impl Toolbox {
@@ -41,7 +36,6 @@ impl Toolbox {
 
     fn create_toolbox(size: i32, orientation: gtk::Orientation, align: gtk::Align) -> gtk::Box {
         let tb = gtk::Box::new(orientation, 0);
-        // tb.add_css_class("toolbox");
 
         if orientation == gtk::Orientation::Horizontal {
             tb.set_height_request(size);
@@ -121,7 +115,6 @@ impl Toolbox {
                 self.attach_to_toolbox(self.central_box.width(), tb, &mut n_btn_left_to_draw);
             }
 
-            // println!("{},{}", no_space_left, order_idx);
             // select gray box
             match gray_box_idx {
                 // Attach toolbox to bottom gray box
@@ -352,10 +345,6 @@ impl Toolbox {
                 }
             }
         }
-
-        // // set bool to true
-        // let mut is_drawn = self.is_toolbox_drawn.clone();
-        // is_drawn = true;
     }
 
     fn attach_to_toolbox(&self, length: i32, toolbox: gtk::Box, n_btns_left_to_draw: &mut usize) {
@@ -386,11 +375,6 @@ impl Toolbox {
     }
 
     pub fn stop_toolbox(&self) {
-        // // if toolbox is not drawn yet, return
-        // if self.is_toolbox_drawn == false {
-        //     return;
-        // }
-
         //  every button from their parents before attaching them again
         for btn in &self.buttons_list {
             // Get the parent of the button

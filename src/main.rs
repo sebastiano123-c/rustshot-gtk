@@ -5,8 +5,10 @@ mod rustshot_gui;
 mod toolbox;
 use rustshot_gui::RustshotGui;
 
+const APP_NAME: &str = "com.seb.rustshot-gtk";
+
 fn main() {
-    let app = gtk::Application::new(Some("com.seb.rustshot-gtk"), Default::default());
+    let app = gtk::Application::new(Some(APP_NAME), Default::default());
 
     app.connect_activate(|app| {
         let gui = RustshotGui::new(app);
