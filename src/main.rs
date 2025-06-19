@@ -2,6 +2,7 @@ use gtk::prelude::*;
 mod drawing_area_manager;
 mod handles;
 mod rustshot_gui;
+mod screen_recorder;
 mod toolbox;
 use rustshot_gui::RustshotGui;
 

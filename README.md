@@ -47,7 +47,12 @@ for_window [app_id="rustshot-gtk"] border pixel 0, floating enable, fullscreen d
 ```
 
 ## TODO
-For version 0.5.0
+For version 0.5.0 
+- add the video recording with wf-recorder:
+    - error when deciding canceling the file save;
+    - is it possible to move the frame when moving the screen shot box?
+    
+For version 0.6.0
 - add pixelated square boxes
 - move the toolbox across the screen when in fullscreen 
 

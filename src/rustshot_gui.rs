@@ -1,5 +1,6 @@
 use super::drawing_area_manager::DrawingAreaManager;
 use super::handles::Handles;
+use super::screen_recorder::ScreenRecorder;
 use super::toolbox::Toolbox;
 use gtk::prelude::*;
 use gtk::{gdk, gio, glib};
@@ -36,6 +37,8 @@ pub struct RustshotGui {
     // toolbox buttons
     toolbox: Toolbox,
     copy_to_clipboard: gtk::Button,
+    exit_button: gtk::Button,
+    record_screen: gtk::Button,
     fullscreen: gtk::Button,
     save_to_file: gtk::Button,
     add_arc_fill: gtk::Button,
@@ -61,6 +64,8 @@ pub struct RustshotGui {
     numbered_circles_font_color_g: Rc<Cell<f64>>,
     numbered_circles_font_color_b: Rc<Cell<f64>>,
     settings_window: gtk::Window,
+    // screen recorder
+    screen_recorder: Rc<RefCell<ScreenRecorder>>,
     // stretch handles
     handles: Rc<RefCell<Handles>>,
     // current color
@@ -180,6 +185,8 @@ impl RustshotGui {
         let settings_btn = tb.create_toolbox_button("\u{f013}", Some("Settings"));
         let copy_clipboard_btn = tb.create_toolbox_button("\u{f328}", Some(r#"Copy to clipboard"#)); // f24d, f030
         let save_to_file_btn = tb.create_toolbox_button("\u{f0c7}", Some(r#"Save image"#));
+        let exit_btn = tb.create_toolbox_button("\u{f057}", Some(r#"Close"#));
+        let record_screen_btn = tb.create_toolbox_button("\u{f03d}", Some(r#"Record screen"#));
 
         // settings
         let init_arrow_size = Rc::new(Cell::new(10.0));
@@ -254,6 +261,8 @@ impl RustshotGui {
             h: sh,
             // toolbox buttons
             toolbox: tb,
+            exit_button: exit_btn,
+            record_screen: record_screen_btn,
             copy_to_clipboard: copy_clipboard_btn,
             fullscreen: fullscree_btn,
             save_to_file: save_to_file_btn,
@@ -281,6 +290,8 @@ impl RustshotGui {
             numbered_circles_font_color_g: init_numbered_circles_font_color_g,
             numbered_circles_font_color_b: init_numbered_circles_font_color_b,
             settings_window: subwin,
+            // screen recorder
+            screen_recorder: Rc::new(RefCell::new(ScreenRecorder::new())),
             // color
             red: Rc::new(Cell::new(red)),
             green: Rc::new(Cell::new(green)),
@@ -474,6 +485,7 @@ impl RustshotGui {
             let handles = Rc::clone(&handles);
             let boxes = Rc::clone(&boxes);
             let toolbox = self.toolbox.clone();
+            let screen_recorder = self.screen_recorder.clone();
             move |_, _keyval, keycode, _state| {
                 // if 'esc' is pressed
                 if keycode == 9 {
@@ -484,8 +496,60 @@ impl RustshotGui {
                         pressed.set(false);
                         toolbox.remove_css_class("pressed");
                     } else {
-                        subwin.destroy();
-                        window.destroy();
+                        // If we are recording the screen we need to stop the recording.
+                        // Then, we open the file save dialog.
+                        // Once the user clicks the 'save' button, the program will move the saved
+                        // file under "~/Videos/rustshot-gtk/out.mkv" to the user defined location.
+                        // file chooser dialog
+                        if screen_recorder.borrow().is_recording == true {
+                            // stop the recording
+                            screen_recorder.borrow_mut().stop_recording();
+
+                            // open the file dialog
+                            let dialog = gtk::FileDialog::builder()
+                                .title("Save File")
+                                .accept_label("Save")
+                                .initial_name("capture.mkv")
+                                .build();
+
+                            // Create a cancellable instance
+                            let cancellable = gio::Cancellable::new();
+
+                            // Open the dialog
+                            let win_clone = window.clone();
+                            let subwin_clone = subwin.clone();
+                            let screen_rec_clone = screen_recorder.clone();
+                            let toolbox = toolbox.clone();
+
+                            // clone
+                            dialog.save(Some(&window), Some(&cancellable), move |file| {
+                                match file {
+                                    Ok(file) => {
+                                        // wait
+                                        std::thread::sleep(std::time::Duration::from_millis(50));
+
+                                        // move the saved recording into the user defined location
+                                        let output = std::process::Command::new("mv")
+                                            .arg(screen_rec_clone.borrow().get_file_path())
+                                            .arg(&file.path().expect("Invalid file path"))
+                                            .output()
+                                            .expect("Error in moving file");
+
+                                        // finally we need to destroy the windows objects
+                                        subwin_clone.destroy();
+                                        win_clone.destroy();
+                                    }
+                                    Err(err) => {
+                                        eprintln!("Error selecting file: {}", err);
+
+                                        // probably you exit the file dialog, so you want to continue
+                                        // editing...
+                                        toolbox.draw_toolbox();
+                                    }
+                                }
+                            });
+                        }
+
                         return glib::signal::Propagation::Stop;
                     }
                 }
@@ -1173,6 +1237,36 @@ impl RustshotGui {
         });
 
         ////////////////////////////////////////////////
+        // Save recording screen
+        ////////////////////////////////////////////////
+        let rsb = self.record_screen.clone();
+        let gesture = gtk::GestureClick::new();
+        rsb.add_controller(gesture.clone());
+        // TODO: how to interrupt video recording?
+
+        gesture.connect_pressed({
+            let toolbox = self.toolbox.clone();
+            move |_, _, _, _| {
+                toolbox.stop_toolbox();
+            }
+        });
+
+        gesture.connect_stopped({
+            let (screen_x, screen_y) = (self.x.clone(), self.y.clone());
+            let (screen_w, screen_h) = (self.w.clone(), self.h.clone());
+            let screen_recorder = self.screen_recorder.clone();
+            move |_| {
+                // start recording screen
+                screen_recorder.borrow_mut().start_record_screen(
+                    screen_x.get() as i32,
+                    screen_y.get() as i32,
+                    screen_w.get() as i32,
+                    screen_h.get() as i32,
+                );
+            }
+        });
+
+        ////////////////////////////////////////////////
         // Toggle fullscreen
         ////////////////////////////////////////////////
         let tfs = self.fullscreen.clone();
@@ -1211,6 +1305,21 @@ impl RustshotGui {
             let toolbox = self.toolbox.clone();
             move |_| {
                 toolbox.draw_toolbox();
+            }
+        });
+
+        ////////////////////////////////////////////////
+        // Exit rustshot-gtk
+        ////////////////////////////////////////////////
+        let eb = self.exit_button.clone();
+        let gesture = gtk::GestureClick::new();
+        eb.add_controller(gesture.clone());
+
+        gesture.connect_pressed({
+            let window = self.window.clone();
+            move |_, _, _, _| {
+                // TODO: what happens if the recording video is going on?
+                window.destroy();
             }
         });
     }
@@ -1445,9 +1554,8 @@ impl RustshotGui {
     }
 
     fn set_css() {
-        // --- style.css
+        // set provider style.css
         let provider = gtk::CssProvider::new();
-        // provider.load_from_data(include_str!("style.css"));
         provider.load_from_string(include_str!("../style.css"));
         gtk::style_context_add_provider_for_display(
             &gdk::Display::default().expect("Could not connect to a display."),
@@ -1471,16 +1579,15 @@ impl RustshotGui {
             let obj = monitors.item(monitor_n).unwrap();
             let primary_monitor = obj.downcast_ref::<gdk::Monitor>().unwrap();
             let geometry = primary_monitor.geometry();
+
             // fill vectors
             vec_w.push(geometry.x() + geometry.width());
             vec_h.push(geometry.y() + geometry.height());
-            //(monitor_width, monitor_height) = (geometry.width(), geometry.height())
         }
 
         // compute the full desktop size
         let monitor_width = vec_w.iter().max().expect("no maximum width");
         let monitor_height = vec_h.iter().max().expect("no maximum height");
-        // println!("{},{}", &monitor_width, &monitor_width);
 
         (*monitor_width, *monitor_height)
     }

@@ -4,6 +4,7 @@ version = "0.4.0"
 edition = "2024"
 
 [dependencies]
+nix = "0.15.0"
 gtk = { git = "https://github.com/gtk-rs/gtk4-rs.git", package = "gtk4", features = [
   "v4_18",
 ] }
