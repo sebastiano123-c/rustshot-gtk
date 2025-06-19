@@ -6,7 +6,7 @@ Simple screenshot program that works on SwayWM.
 Uses Grim. AH! It also supports screen recording!
 Not tested on other DEs, feel free to do it.
 
-![image](./images/capture.png)
+![image](./images/capture1.png)
 
 ## Motivation
 I couldn't get Flameshot to work on sway (every screenshot was half black). 
