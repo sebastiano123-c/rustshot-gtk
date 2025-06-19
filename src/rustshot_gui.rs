@@ -168,7 +168,6 @@ impl RustshotGui {
             bottom_b.clone(),
             right_b.clone(),
         ); //, b.clone(), r.clone());
-        let fullscree_btn = tb.create_toolbox_button("\u{f424}", Some("Set fullscreen"));
         let add_box_no_fill_btn =
             tb.create_toolbox_button("\u{f096}", Some("Draw rectangle without fill"));
         let add_rect_btn = tb.create_toolbox_button("\u{f096}", Some("Draw filled rectangle")); //f04d
@@ -183,10 +182,11 @@ impl RustshotGui {
         let add_num_circ_btn = tb.create_toolbox_button("\u{f06a}", Some("Add numbered circles"));
         let pick_color_btn = tb.create_toolbox_button("\u{f53f}", Some("Pick color"));
         let settings_btn = tb.create_toolbox_button("\u{f013}", Some("Settings"));
+        let fullscree_btn = tb.create_toolbox_button("\u{f424}", Some("Set fullscreen"));
         let copy_clipboard_btn = tb.create_toolbox_button("\u{f328}", Some(r#"Copy to clipboard"#)); // f24d, f030
         let save_to_file_btn = tb.create_toolbox_button("\u{f0c7}", Some(r#"Save image"#));
-        let exit_btn = tb.create_toolbox_button("\u{f00d}", Some(r#"Close"#));
         let record_screen_btn = tb.create_toolbox_button("\u{f03d}", Some(r#"Record screen"#));
+        let exit_btn = tb.create_toolbox_button("\u{f00d}", Some(r#"Close"#));
 
         // settings
         let init_arrow_size = Rc::new(Cell::new(10.0));
@@ -525,8 +525,8 @@ impl RustshotGui {
                             dialog.save(Some(&window), Some(&cancellable), move |file| {
                                 match file {
                                     Ok(file) => {
-                                        // wait
-                                        std::thread::sleep(std::time::Duration::from_millis(50));
+                                        // // wait
+                                        // std::thread::sleep(std::time::Duration::from_millis(50));
 
                                         // move the saved recording into the user defined location
                                         let _output = std::process::Command::new("mv")

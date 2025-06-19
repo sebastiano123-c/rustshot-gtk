@@ -1,5 +1,5 @@
 # Rustshot-gtk
-Version: 0.3.0
+Version: 0.5.0
 
 ## Description
 Simple screenshot program that works on SwayWM. 
@@ -14,14 +14,9 @@ I decided to create my own program using Rust and GTK4.
 
 ## Requirements
 - [rust](https://doc.rust-lang.org/book/ch01-01-installation.html) 
-- fontawesome
+- fontawesome, grim, wf-recorder:
 ```{bash}
-sudo dnf install fontawesome-fonts-all
-```
-- grim 
-
-```{bash}
-sudo dnf install grim
+sudo dnf install fontawesome-fonts-all grim wf-recorder
 ```
 
 ## Installation
@@ -49,6 +44,8 @@ for_window [app_id="rustshot-gtk"] border pixel 0, floating enable, fullscreen d
 ## TODO
 For version 0.5.1 
 - add the video recording with wf-recorder:
+    - add a help window that says how to exit the recording (by pressing 'esc')
+    - is it possible to have better resolution?
     - is it possible to move the frame when moving the screen shot box?
     - add recording settings in the toolbox settings
     

@@ -60,7 +60,7 @@ impl ScreenRecorder {
             .arg(&self.output_file)
             .arg("-y")
             .stdout(std::process::Stdio::piped())
-            .stderr(std::process::Stdio::piped()) // Capture stderr for error messages
+            // .stderr(std::process::Stdio::piped()) // Capture stderr for error messages
             .spawn() // Execute the command
             .expect("Failed to execute wf-recorder");
 
