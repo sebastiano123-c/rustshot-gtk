@@ -49,7 +49,7 @@ impl ScreenRecorder {
         //  -y, --overwrite = Force overwriting the output file without prompting.
 
         // Build the --geometry string
-        let geometry = format!("{},{} {}x{}", x + 1, y + 1, w, h);
+        let geometry = format!("{},{} {}x{}", x, y, w, h);
 
         // Execute the `grim` command
         let child = std::process::Command::new("wf-recorder")
@@ -85,9 +85,9 @@ impl ScreenRecorder {
         )
         .expect("cannot send ctrl-c");
 
-        // Optionally, wait for the process to exit
-        let _ = child.wait().expect("Process wasn't running");
-        println!("Process stopped.");
+        // // Optionally, wait for the process to exit
+        // let _ = child.wait().expect("Process wasn't running");
+        // println!("Process stopped.");
 
         // stop recording
         self.is_recording = false;

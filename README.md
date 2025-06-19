@@ -14,15 +14,15 @@ I decided to create my own program using Rust and GTK4.
 
 ## Features
 Version 0.5:
-- take screenshots and copy to clipboard;
-- take screenshots and save into file;
+- Take screenshots and copy to clipboard;
+- Take screenshots and save to file;
 - screen recording;
 - Annotations:
-    - boxes and circles;
-    - arrows and lines;
-    - numbered annotations;
-    - free-hand writing;
-- possibility to change annotations colors;
+    - Boxes and circles;
+    - Arrows and lines;
+    - Numbered annotations;
+    - Free-hand writing;
+- Possibility to change annotations colors;
 
 ## Requirements
 - [rust](https://doc.rust-lang.org/book/ch01-01-installation.html) 
