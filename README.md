@@ -3,7 +3,7 @@ Version: 0.5.0
 
 ## Description
 Simple screenshot program that works on SwayWM. 
-Uses Grim.
+Uses Grim. AH! It also supports screen recording!
 Not tested on other DEs, feel free to do it.
 
 ![image](./images/capture.png)
@@ -11,6 +11,18 @@ Not tested on other DEs, feel free to do it.
 ## Motivation
 I couldn't get Flameshot to work on sway (every screenshot was half black). 
 I decided to create my own program using Rust and GTK4.
+
+## Features
+Version 0.5:
+    - take screenshots and copy to clipboard;
+    - take screenshots and save into file;
+    - screen recording;
+    - Annotations:
+        - boxes and circles;
+        - arrows and lines;
+        - numbered annotations;
+        - free-hand writing;
+    - possibility to change annotations colors;
 
 ## Requirements
 - [rust](https://doc.rust-lang.org/book/ch01-01-installation.html) 
