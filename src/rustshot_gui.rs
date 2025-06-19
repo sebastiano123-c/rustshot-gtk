@@ -185,7 +185,7 @@ impl RustshotGui {
         let settings_btn = tb.create_toolbox_button("\u{f013}", Some("Settings"));
         let copy_clipboard_btn = tb.create_toolbox_button("\u{f328}", Some(r#"Copy to clipboard"#)); // f24d, f030
         let save_to_file_btn = tb.create_toolbox_button("\u{f0c7}", Some(r#"Save image"#));
-        let exit_btn = tb.create_toolbox_button("\u{f057}", Some(r#"Close"#));
+        let exit_btn = tb.create_toolbox_button("\u{f00d}", Some(r#"Close"#));
         let record_screen_btn = tb.create_toolbox_button("\u{f03d}", Some(r#"Record screen"#));
 
         // settings
@@ -529,7 +529,7 @@ impl RustshotGui {
                                         std::thread::sleep(std::time::Duration::from_millis(50));
 
                                         // move the saved recording into the user defined location
-                                        let output = std::process::Command::new("mv")
+                                        let _output = std::process::Command::new("mv")
                                             .arg(screen_rec_clone.borrow().get_file_path())
                                             .arg(&file.path().expect("Invalid file path"))
                                             .output()
@@ -548,6 +548,10 @@ impl RustshotGui {
                                     }
                                 }
                             });
+                        } else {
+                            // finally we need to destroy the windows objects
+                            subwin.destroy();
+                            window.destroy();
                         }
 
                         return glib::signal::Propagation::Stop;

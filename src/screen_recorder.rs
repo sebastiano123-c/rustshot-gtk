@@ -88,6 +88,9 @@ impl ScreenRecorder {
         // Optionally, wait for the process to exit
         let _ = child.wait().expect("Process wasn't running");
         println!("Process stopped.");
+
+        // stop recording
+        self.is_recording = false;
     }
 
     pub fn get_file_path(&self) -> String {
@@ -99,9 +102,10 @@ impl ScreenRecorder {
         if !std::fs::metadata(path).is_ok() {
             std::fs::create_dir(path)?;
             println!("Folder created: {}", path);
-        } else {
-            println!("Folder already exists: {}", path);
         }
+        // else {
+        //     println!("Folder already exists: {}", path);
+        // }
         Ok(())
     }
 }
