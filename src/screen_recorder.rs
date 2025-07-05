@@ -1,5 +1,3 @@
-use std; // Import the signal crate
-
 #[derive(Debug)]
 pub struct ScreenRecorder {
     pub is_recording: bool,
@@ -70,7 +68,7 @@ impl ScreenRecorder {
 
     pub fn stop_recording(&mut self) {
         // Exit if it is not recording
-        if self.is_recording == false {
+        if !self.is_recording {
             println!("Reconding is not yet started!");
             return;
         }
@@ -94,12 +92,12 @@ impl ScreenRecorder {
     }
 
     pub fn get_file_path(&self) -> String {
-        return self.output_file.clone();
+        self.output_file.clone()
     }
 
     fn create_folder_if_not_exists(path: &str) -> std::io::Result<()> {
         // Create the folder if it does not exist
-        if !std::fs::metadata(path).is_ok() {
+        if std::fs::metadata(path).is_err() {
             std::fs::create_dir(path)?;
             println!("Folder created: {}", path);
         }

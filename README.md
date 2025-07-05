@@ -50,7 +50,7 @@ Add in `~/.config/sway/config` to display the program in fullscreen
 bindsym Shift+$mod+s exec $take_screenshot
 
 # opens in fullscreen
-for_window [app_id="rustshot-gtk"] border pixel 0, floating enable, fullscreen disable, move absolute position 0 0
+for_window [app_id="rustshot-gtk"] border pixel 0, floating enable, fullscreen disable, move absolute position 0 0, focus
 ```
 
 ## TODO
@@ -58,7 +58,7 @@ For version 0.5.1
 - add the video recording with wf-recorder:
     - add a help window that says how to exit the recording (by pressing 'esc')
     - is it possible to have better resolution?
-    - is it possible to move the frame when moving the screen shot box?
+    - is it possible to move the frame when moving the screen shot box? (probabily not with wf-recorder)
     - add recording settings in the toolbox settings
     
 For version 0.6.0
