@@ -335,12 +335,12 @@ impl RustshotGui {
                 if keycode == 9 {
                     subwin.set_visible(false);
                 }
-                return glib::signal::Propagation::Proceed;
+                glib::signal::Propagation::Proceed
             }
         });
         subwin.set_default_width(400);
         // subwin.add_css_class("transparent");
-        subwin.set_title(Some(&"Settings"));
+        subwin.set_title(Some("Settings"));
         let vlayout = gtk::Box::new(gtk::Orientation::Vertical, 0);
         subwin.set_child(Some(&vlayout));
         // line size
@@ -369,7 +369,7 @@ impl RustshotGui {
         hbox.set_width_request(400);
 
         // create label
-        let lbl = gtk::Label::new(Some(&entry_label));
+        let lbl = gtk::Label::new(Some(entry_label));
         lbl.set_width_request(100);
 
         // create slide widget
@@ -490,7 +490,7 @@ impl RustshotGui {
                 // if 'esc' is pressed
                 if keycode == 9 {
                     subwin.set_visible(false);
-                    if pressed.get() == true {
+                    if pressed.get() {
                         handles.borrow_mut().set_central_box_sensitivity(true);
                         boxes.borrow_mut().is_drawing = false;
                         pressed.set(false);
@@ -501,7 +501,7 @@ impl RustshotGui {
                         // Once the user clicks the 'save' button, the program will move the saved
                         // file under "~/Videos/rustshot-gtk/out.mkv" to the user defined location.
                         // file chooser dialog
-                        if screen_recorder.borrow().is_recording == true {
+                        if screen_recorder.borrow().is_recording {
                             // stop the recording
                             screen_recorder.borrow_mut().stop_recording();
 
@@ -531,7 +531,7 @@ impl RustshotGui {
                                         // move the saved recording into the user defined location
                                         let _output = std::process::Command::new("mv")
                                             .arg(screen_rec_clone.borrow().get_file_path())
-                                            .arg(&file.path().expect("Invalid file path"))
+                                            .arg(file.path().expect("Invalid file path"))
                                             .output()
                                             .expect("Error in moving file");
 
@@ -677,7 +677,7 @@ impl RustshotGui {
             #[weak]
             boxes,
             move |_, cr, _width, _height| {
-                boxes.borrow_mut().set_draw(&cr);
+                boxes.borrow_mut().set_draw(cr);
             }
         ));
 
@@ -1109,7 +1109,7 @@ impl RustshotGui {
             #[weak]
             left,
             move |_, x, y| {
-                if boxes.borrow().is_drawing() == true {
+                if boxes.borrow().is_drawing() {
                     boxes
                         .borrow_mut()
                         // 10 is handle size
@@ -1123,14 +1123,14 @@ impl RustshotGui {
             #[weak]
             boxes,
             move |_, x, y| {
-                if boxes.borrow_mut().is_drawing() == true {
+                if boxes.borrow_mut().is_drawing() {
                     boxes.borrow_mut().drag_update(x, y);
                     drawing.queue_draw(); // Request a redraw
                 }
             }
         ));
         draw_gesture.connect_drag_end(move |_, _, _| {
-            if boxes.borrow_mut().is_drawing() == true {
+            if boxes.borrow_mut().is_drawing() {
                 boxes.borrow_mut().drag_end();
                 // boxes.borrow_mut().is_drawing = false;
                 // handles.borrow_mut().set_central_box_sensitivity(true);
@@ -1296,8 +1296,8 @@ impl RustshotGui {
                 // update values
                 x.set(0.0);
                 y.set(0.0);
-                w.set(full_w as f64);
-                h.set(full_h as f64);
+                w.set(full_w);
+                h.set(full_h);
                 top.set(0.0);
                 right.set(0.0);
                 left.set(0.0);
@@ -1395,8 +1395,8 @@ impl RustshotGui {
                 // calculate
                 let t = y;
                 let l = x;
-                let r = full_w as f64 - x;
-                let b = full_h as f64 - y;
+                let r = full_w - x;
+                let b = full_h - y;
 
                 // change size
                 top_box.set_height_request(t as i32);
@@ -1462,8 +1462,8 @@ impl RustshotGui {
                 // save screenshot width and height
                 sx.set(l);
                 sy.set(t);
-                sw.set(&full_w - l - r);
-                sh.set(&full_h - t - b);
+                sw.set(full_w - l - r);
+                sh.set(full_h - t - b);
             }
         ));
 
@@ -1546,7 +1546,7 @@ impl RustshotGui {
 
         // build the grim string like "10,20 400x900"
         // we need to subtract the border of the screenbox (which is 2px, see style.css)
-        let grim_string = &format!("{},{} {}x{}", x + 1, y + 1, w, h);
+        let grim_string = &format!("{},{} {}x{}", x + 1, y + 1, w - 1, h - 1);
 
         // Execute the `grim` command
         let _grim_output = std::process::Command::new("grim")
