@@ -1216,6 +1216,7 @@ impl RustshotGui {
                     match file {
                         Ok(file) => {
                             std::thread::sleep(std::time::Duration::from_millis(500));
+
                             // save screenshot
                             Self::save_screenshot(
                                 file,

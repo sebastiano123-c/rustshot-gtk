@@ -57,11 +57,11 @@ impl Handles {
             bottom: bottom_margin,
             left: left_margin,
             right: right_margin,
-            top_box: top_box,
-            bottom_box: bottom_box,
-            left_box: left_box,
-            right_box: right_box,
-            screenshot_box: screenshot_box,
+            top_box,
+            bottom_box,
+            left_box,
+            right_box,
+            screenshot_box,
             x: screenshot_x,
             y: screenshot_y,
             w: screenshot_w,
@@ -69,9 +69,9 @@ impl Handles {
             handles_size: handles_sz,
             central_handle: gtk::Box::new(gtk::Orientation::Horizontal, 0),
             central_handle_sensitive: Rc::new(Cell::new(true)),
-            full_w: full_w,
-            full_h: full_h,
-            toolbox: toolbox,
+            full_w,
+            full_h,
+            toolbox,
         }
     }
 
@@ -144,7 +144,7 @@ impl Handles {
         // let c = self.central_handle.clone();
         // c.set_sensitive(sensitive);
         self.central_handle_sensitive.set(sensitive);
-        println!("sens set to {}", sensitive);
+        // println!("sens set to {}", sensitive);
     }
 
     fn create_handle(&self, col: u8, row: u8) -> gtk::Box {
@@ -176,7 +176,7 @@ impl Handles {
             self.right.clone(),
         );
 
-        // screenshot dims
+        // screenshot dimensions
         let (sx, sy, sw, sh) = (
             self.x.clone(),
             self.y.clone(),
