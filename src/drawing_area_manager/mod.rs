@@ -1,8 +1,8 @@
 mod drawables;
 use core::f64;
 use drawables::{
-    Arc, AreaBox, Arrow, DragBegin, DragUpdate, Draw, Drawable, DrawableCollection, FreeHandDraw,
-    Line, NumberedCircle, SetRGBA,
+    Arc, AreaBox, Arrow, DragBegin, DragUpdate, Draw, DrawableCollection, FreeHandDraw, Line,
+    NumberedCircle, SetRGBA,
 };
 use gtk::cairo;
 
@@ -11,7 +11,6 @@ pub struct DrawingAreaManager {
     drawn_items: Vec<DrawableCollection>,
     current_item: Option<DrawableCollection>,
     numbered_circle_idx: usize,
-    what_is_drawing: Option<Drawable>,
     pub is_drawing: bool,
 }
 
@@ -21,7 +20,6 @@ impl DrawingAreaManager {
             current_item: None,
             drawn_items: Vec::new(),
             numbered_circle_idx: 1,
-            what_is_drawing: None,
             is_drawing: false,
         }
     }
@@ -43,7 +41,6 @@ impl DrawingAreaManager {
 
         // emit signal for drawing boxes
         self.is_drawing = true;
-        self.what_is_drawing = Some(Drawable::FreeHandDraw);
     }
 
     pub fn create_new_line(&mut self, arrow_size: f64, r: f64, g: f64, b: f64, a: f64) {
@@ -63,7 +60,6 @@ impl DrawingAreaManager {
 
         // emit signal for drawing boxes
         self.is_drawing = true;
-        self.what_is_drawing = Some(Drawable::Line);
     }
 
     pub fn create_new_arrow(
@@ -92,7 +88,6 @@ impl DrawingAreaManager {
 
         // emit signal for drawing boxes
         self.is_drawing = true;
-        self.what_is_drawing = Some(Drawable::Arrow);
     }
 
     pub fn create_new_numbered_circle(
@@ -133,7 +128,6 @@ impl DrawingAreaManager {
 
         // emit signal for drawing boxes
         self.is_drawing = true;
-        self.what_is_drawing = Some(Drawable::NumberedCircle);
     }
 
     pub fn create_new_arc(
@@ -160,7 +154,6 @@ impl DrawingAreaManager {
 
         // emit signal for drawing boxes
         self.is_drawing = true;
-        self.what_is_drawing = Some(Drawable::Arc);
     }
 
     pub fn create_new_box(
@@ -187,7 +180,6 @@ impl DrawingAreaManager {
 
         // emit signal for drawing boxes
         self.is_drawing = true;
-        self.what_is_drawing = Some(Drawable::AreaBox);
     }
 
     pub fn is_drawing(&self) -> bool {
@@ -195,10 +187,9 @@ impl DrawingAreaManager {
     }
 
     pub fn set_rgba(&mut self, r: f64, g: f64, b: f64, a: f64) {
-        self.current_item
-            .as_mut()
-            .expect("set_rgba current_item is None")
-            .set_rgba(r, g, b, a);
+        if let Some(item) = self.current_item.as_mut() {
+            item.set_rgba(r, g, b, a);
+        }
     }
 
     fn draw_elements(&self, cr: &cairo::Context) {
@@ -208,11 +199,8 @@ impl DrawingAreaManager {
     }
 
     fn draw_current_element(&mut self, cr: &cairo::Context) {
-        if self.current_item.is_some() {
-            self.current_item
-                .as_mut()
-                .expect("current_item value is None!")
-                .draw(cr);
+        if let Some(item) = self.current_item.as_mut() {
+            item.draw(cr);
         }
     }
 
@@ -243,15 +231,24 @@ impl DrawingAreaManager {
     }
 
     pub fn drag_end(&mut self) {
+        // Borrow the current item
         let current_item = self
             .current_item
-            .as_mut()
+            .take()
             .expect("drag_end current_item is None");
 
+        // Store it in the drawn items list
+        self.drawn_items.push(current_item.clone());
+
+        // Once the current item is stored there is nothing left to draw.
+        // We need to trigger the generation of a new current item.
+        // Otherwise, we will need to press again the button
+        self.generate_new_item(&current_item);
+    }
+
+    fn generate_new_item(&mut self, current_item: &DrawableCollection) {
         match current_item {
             DrawableCollection::AreaBoxes(state) => {
-                self.drawn_items
-                    .push(DrawableCollection::AreaBoxes(state.clone()));
                 let (f, r, g, b, a) = (
                     state.border,
                     state.red,
@@ -262,8 +259,6 @@ impl DrawingAreaManager {
                 self.create_new_box(r, g, b, a, f);
             }
             DrawableCollection::Arcs(state) => {
-                self.drawn_items
-                    .push(DrawableCollection::Arcs(state.clone()));
                 let (f, r, g, b, a) = (
                     state.border,
                     state.red,
@@ -274,15 +269,11 @@ impl DrawingAreaManager {
                 self.create_new_arc(r, g, b, a, f);
             }
             DrawableCollection::Lines(state) => {
-                self.drawn_items
-                    .push(DrawableCollection::Lines(state.clone()));
                 let (sz, r, g, b, a) =
                     (state.size, state.red, state.green, state.blue, state.alpha);
                 self.create_new_line(sz, r, g, b, a);
             }
             DrawableCollection::Arrows(state) => {
-                self.drawn_items
-                    .push(DrawableCollection::Arrows(state.clone()));
                 let (sz, w, r, g, b, a) = (
                     state.size,
                     state.width,
@@ -294,15 +285,11 @@ impl DrawingAreaManager {
                 self.create_new_arrow(sz, w, r, g, b, a);
             }
             DrawableCollection::FreeHands(state) => {
-                self.drawn_items
-                    .push(DrawableCollection::FreeHands(state.clone()));
                 let (sz, r, g, b, a) =
                     (state.size, state.red, state.green, state.blue, state.alpha);
                 self.create_new_freehand_draw(sz, r, g, b, a);
             }
             DrawableCollection::NumberedCircles(state) => {
-                self.drawn_items
-                    .push(DrawableCollection::NumberedCircles(state.clone()));
                 let (rad, fs, fr, fg, fb, r, g, b, a) = (
                     state.radius,
                     state.font_size,

@@ -91,16 +91,6 @@ pub struct AreaBox {
 }
 
 #[derive(Debug, Clone)]
-pub enum Drawable {
-    NumberedCircle,
-    FreeHandDraw,
-    Line,
-    Arrow,
-    Arc,
-    AreaBox,
-}
-
-#[derive(Debug, Clone)]
 pub enum DrawableCollection {
     NumberedCircles(NumberedCircle),
     FreeHands(FreeHandDraw),
