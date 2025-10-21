@@ -7,5 +7,5 @@ edition = "2024"
 itoa = "1.0"
 nix = "0.15.0"
 gtk = { git = "https://github.com/gtk-rs/gtk4-rs.git", package = "gtk4",  features = [
-  "v4_18",
+  "v4_20",
 ] }
