@@ -6,7 +6,7 @@ mod screen_recorder;
 mod toolbox;
 use rustshot_gui::RustshotGui;
 
-const APP_NAME: &str = "com.seb.rustshot-gtk";
+const APP_NAME: &str = "com.rust.rustshot-gtk";
 
 fn main() {
     let app = gtk::Application::new(Some(APP_NAME), Default::default());
