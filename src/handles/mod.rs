@@ -4,6 +4,92 @@ use gtk::prelude::*;
 use std::cell::Cell;
 use std::rc::Rc;
 
+/// Small helper that groups the four side boxes as weak references.
+/// Using weak refs prevents reference cycles when the gesture callbacks
+/// outlive the widgets that created them.
+#[derive(Clone)]
+struct SideBoxes {
+    top: glib::WeakRef<gtk::Box>,
+    left: glib::WeakRef<gtk::Box>,
+    bottom: glib::WeakRef<gtk::Box>,
+    right: glib::WeakRef<gtk::Box>,
+}
+
+impl SideBoxes {
+    fn upgrade(&self) -> Option<(gtk::Box, gtk::Box, gtk::Box, gtk::Box)> {
+        Some((
+            self.top.upgrade()?,
+            self.left.upgrade()?,
+            self.bottom.upgrade()?,
+            self.right.upgrade()?,
+        ))
+    }
+}
+
+/// Stores the mutable geometry values used by the drag callbacks.
+#[derive(Clone)]
+struct GeometryState {
+    // Current positions (0.0 … full size)
+    top: Rc<Cell<f64>>,
+    left: Rc<Cell<f64>>,
+    bottom: Rc<Cell<f64>>,
+    right: Rc<Cell<f64>>,
+
+    // Screenshot‑area helpers (the same type you used before)
+    sx: Rc<Cell<f64>>,
+    sy: Rc<Cell<f64>>,
+    sw: Rc<Cell<f64>>,
+    sh: Rc<Cell<f64>>,
+
+    // Full window size – constant for the life of the widget
+    full_w: f64,
+    full_h: f64,
+}
+
+impl GeometryState {
+    /// Clamp the values so none become negative and keep the layout sane.
+    fn clamp(&self, l: f64, r: f64, t: f64, b: f64) -> (f64, f64, f64, f64) {
+        let l = l.max(0.0);
+        let r = r.max(0.0);
+        let t = t.max(0.0);
+        let b = b.max(0.0);
+        (l, r, t, b)
+    }
+
+    /// Apply the new geometry to the UI and to the stored properties.
+    fn apply(
+        &self,
+        left: f64,
+        right: f64,
+        top: f64,
+        bottom: f64,
+        side_boxes: &(gtk::Box, gtk::Box, gtk::Box, gtk::Box),
+    ) {
+        let (top_box, left_box, bottom_box, right_box) = side_boxes;
+
+        // --------------------------------------------------------------------
+        // 1️⃣  Update the actual widget sizes (GTK expects i32)
+        // --------------------------------------------------------------------
+        top_box.set_height_request(top as i32);
+        bottom_box.set_height_request(bottom as i32);
+        right_box.set_width_request(right as i32);
+        left_box.set_width_request(left as i32);
+
+        // --------------------------------------------------------------------
+        // 2️⃣  Sync the internal property values
+        // --------------------------------------------------------------------
+        self.sx.set(left);
+        self.sy.set(top);
+        self.sw.set(self.full_w - right - left);
+        self.sh.set(self.full_h - top - bottom);
+
+        self.top.set(top);
+        self.bottom.set(bottom);
+        self.left.set(left);
+        self.right.set(right);
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Handles {
     // margins
@@ -83,52 +169,13 @@ impl Handles {
         let css_class = "transparent";
 
         // create handles top
-        let top_spacer = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-        top_spacer.add_css_class(css_class);
-        top_spacer.set_height_request(self.handles_size);
-        top_spacer.set_valign(gtk::Align::Start);
-        let tl_handle = self.create_handle(0, 0);
-        tl_handle.set_width_request(self.handles_size);
-        let tc_handle = self.create_handle(1, 0);
-        tc_handle.set_hexpand(true);
-        let tr_handle = self.create_handle(2, 0);
-        tr_handle.set_width_request(self.handles_size);
-        tr_handle.set_halign(gtk::Align::End);
-        top_spacer.append(&tl_handle);
-        top_spacer.append(&tc_handle);
-        top_spacer.append(&tr_handle);
+        let top_spacer = self.make_spacer(0, css_class, gtk::Align::Start);
 
         // create handles center
-        let center_spacer = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-        center_spacer.add_css_class(css_class);
-        center_spacer.set_vexpand(true);
-        let cl_handle = self.create_handle(0, 1);
-        cl_handle.set_width_request(self.handles_size);
-        let cc_handle = self.create_handle(1, 1);
-        cc_handle.set_hexpand(true);
-        // cc_handle.add_css_class(css_class);
-        let cr_handle = self.create_handle(2, 1);
-        cr_handle.set_width_request(self.handles_size);
-        cr_handle.set_halign(gtk::Align::End);
-        center_spacer.append(&cl_handle);
-        center_spacer.append(&cc_handle);
-        center_spacer.append(&cr_handle);
+        let center_spacer = self.make_spacer(1, css_class, gtk::Align::Fill);
 
         // create handles bottom
-        let bottom_spacer = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-        bottom_spacer.add_css_class(css_class);
-        bottom_spacer.set_height_request(self.handles_size);
-        bottom_spacer.set_valign(gtk::Align::End);
-        let bl_handle = self.create_handle(0, 2);
-        bl_handle.set_width_request(self.handles_size);
-        let bc_handle = self.create_handle(1, 2);
-        bc_handle.set_hexpand(true);
-        let br_handle = self.create_handle(2, 2);
-        br_handle.set_width_request(self.handles_size);
-        br_handle.set_halign(gtk::Align::End);
-        bottom_spacer.append(&bl_handle);
-        bottom_spacer.append(&bc_handle);
-        bottom_spacer.append(&br_handle);
+        let bottom_spacer = self.make_spacer(2, css_class, gtk::Align::End);
 
         // append to screenshot box
         screenshot_box.append(&top_spacer);
@@ -147,155 +194,179 @@ impl Handles {
         // println!("sens set to {}", sensitive);
     }
 
-    fn create_handle(&self, col: u8, row: u8) -> gtk::Box {
-        // create handle
-        let mut hdl: gtk::Box = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+    /// Helper that creates a “spacer” (the container that holds three handles).
+    fn make_spacer(&self, position: u8, css_class: &str, align: gtk::Align) -> gtk::Box {
+        let sp = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        sp.add_css_class(css_class);
+        sp.set_valign(align);
 
-        // discriminate if is the central handle or not
-        if col == 1_u8 && row == 1_u8 {
-            hdl = self.central_handle.clone();
+        // The size is only relevant for the *cross* axis:
+        // – Horizontal spacers (top / bottom) need a height.
+        // – Vertical spacers (center) need a width.
+        if position == 1 {
+            sp.set_vexpand(true);
         } else {
-            hdl.add_css_class("corner-handle");
+            sp.set_height_request(self.handles_size);
         }
 
-        // clone
-        let (top_box, left_box, bottom_box, right_box) = (
-            self.top_box.clone(),
-            self.left_box.clone(),
-            self.bottom_box.clone(),
-            self.right_box.clone(),
-        );
-        let sensitive = self.central_handle_sensitive.clone();
+        let l_handle = self.create_handle(0, position);
+        l_handle.set_width_request(self.handles_size);
+        let c_handle = self.create_handle(1, position);
+        c_handle.set_hexpand(true);
+        let r_handle = self.create_handle(2, position);
+        r_handle.set_width_request(self.handles_size);
+        r_handle.set_halign(gtk::Align::End);
+        sp.append(&l_handle);
+        sp.append(&c_handle);
+        sp.append(&r_handle);
 
-        // margins
-        // let (full_w, full_h) = (self.full_w, self.full_h);
-        let (top, left, bottom, right) = (
-            self.top.clone(),
-            self.left.clone(),
-            self.bottom.clone(),
-            self.right.clone(),
-        );
+        sp
+    }
 
-        // screenshot dimensions
-        let (sx, sy, sw, sh) = (
-            self.x.clone(),
-            self.y.clone(),
-            self.w.clone(),
-            self.h.clone(),
-        );
+    /// Creates a draggable resize handle.
+    ///
+    /// * `col` / `row` – identify which side of the window the handle belongs to.
+    ///   `col == 1 && row == 1` denotes the central handle.
+    /// * Returns a `gtk::Box` that already has a `GestureDrag` controller attached.
+    ///
+    /// The function assumes the parent widget lives longer than any drag operation;
+    /// weak references are upgraded at the start of each callback and silently ignored
+    /// if the widget has already been destroyed.
+    pub fn create_handle(&self, col: u8, row: u8) -> gtk::Box {
+        // --------------------------------------------------------------
+        // 1️⃣  Pick the correct base widget (central vs corner)
+        // --------------------------------------------------------------
+        let handle = if col == 1 && row == 1 {
+            self.central_handle.clone()
+        } else {
+            let b = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+            b.add_css_class("corner-handle");
+            b
+        };
 
-        // attach gesture to handle
-        let gest = gtk::GestureDrag::new();
-        hdl.add_controller(gest.clone());
+        // --------------------------------------------------------------
+        // 2️⃣  Install a drag gesture controller
+        // --------------------------------------------------------------
+        let gesture = gtk::GestureDrag::new();
+        handle.add_controller(gesture.clone());
 
-        // get full width and height
-        let (full_w, full_h) = (self.full_w, self.full_h);
+        // --------------------------------------------------------------
+        // 3️⃣  Bundle the side boxes as weak refs for the callbacks
+        // --------------------------------------------------------------
+        let side_boxes = SideBoxes {
+            top: self.top_box.downgrade(),
+            left: self.left_box.downgrade(),
+            bottom: self.bottom_box.downgrade(),
+            right: self.right_box.downgrade(),
+        };
 
-        // toolbox
+        // --------------------------------------------------------------
+        // 4️⃣  Clone everything we need inside the closures
+        // --------------------------------------------------------------
         let toolbox = self.toolbox.clone();
 
-        gest.connect_drag_begin({
-            let toolbox = toolbox.clone();
+        // GeometryState holds all the mutable numbers.
+        let geom_state = GeometryState {
+            top: self.top.clone(),
+            left: self.left.clone(),
+            bottom: self.bottom.clone(),
+            right: self.right.clone(),
+
+            sx: self.x.clone(),
+            sy: self.y.clone(),
+            sw: self.w.clone(),
+            sh: self.h.clone(),
+
+            full_w: self.full_w,
+            full_h: self.full_h,
+        };
+
+        let central_sensitive = self.central_handle_sensitive.clone();
+
+        // --------------------------------------------------------------
+        // 5️⃣  Drag‑begin: hide the toolbox while the user resizes
+        // --------------------------------------------------------------
+        gesture.connect_drag_begin(glib::clone!(
+            #[strong]
+            toolbox,
             move |_, _, _| {
                 toolbox.stop_toolbox();
             }
-        });
+        ));
 
-        gest.connect_drag_update(glib::clone!(
-            #[weak]
-            top_box,
-            #[weak]
-            left_box,
-            #[weak]
-            bottom_box,
-            #[weak]
-            right_box,
-            move |_, x, y| {
-                // calculate
-                let mut l = left.get();
-                let mut r = right.get();
-                let mut t = top.get();
-                let mut b = bottom.get();
+        // --------------------------------------------------------------
+        // 6️⃣  Drag‑update: compute new geometry and apply it
+        // --------------------------------------------------------------
+        gesture.connect_drag_update(glib::clone!(
+            #[strong]
+            side_boxes,
+            #[strong]
+            geom_state,
+            #[strong]
+            central_sensitive,
+            move |_, dx, dy| {
+                // Upgrade weak refs; abort if any side box disappeared.
+                let (top_box, left_box, bottom_box, right_box) = match side_boxes.upgrade() {
+                    Some(v) => v,
+                    None => return,
+                };
 
-                // case column
+                // -----------------------------------------------------------------
+                // 6a. Read the current values from the Cells
+                // -----------------------------------------------------------------
+                let mut l = geom_state.left.get();
+                let mut r = geom_state.right.get();
+                let mut t = geom_state.top.get();
+                let mut b = geom_state.bottom.get();
+
+                // -----------------------------------------------------------------
+                // 6b. Adjust according to which handle is being dragged
+                // -----------------------------------------------------------------
                 match col {
-                    0_u8 => {
-                        l += x;
-                    }
-                    1_u8 => {
-                        if row == 1_u8 && sensitive.get() {
-                            l += x;
-                            r -= x;
-                            t += y;
-                            b -= y;
+                    0 => l += dx, // left side
+                    1 => {
+                        // centre column – only move horizontally when the central
+                        // handle is marked as “sensitive”.
+                        if row == 1 && central_sensitive.get() {
+                            l += dx;
+                            r -= dx;
+                            t += dy;
+                            b -= dy;
                         }
                     }
-                    2_u8 => {
-                        r -= x;
-                    }
+                    2 => r -= dx, // right side
                     _ => {}
                 }
 
-                // case row
                 match row {
-                    0_u8 => {
-                        t += y;
-                    }
-                    2_u8 => {
-                        b -= y;
-                    }
+                    0 => t += dy, // top side
+                    2 => b -= dy, // bottom side
                     _ => {}
                 }
 
-                // prevent negative values
-                if l < 0.0 {
-                    l = 0.0;
-                    r = right_box.width() as f64;
-                } else if r < 0.0 {
-                    l = left_box.width() as f64;
-                    r = 0.0;
-                }
-                if t < 0.0 {
-                    t = 0.0;
-                    b = bottom_box.height() as f64;
-                } else if b < 0.0 {
-                    t = top_box.height() as f64;
-                    b = 0.0;
-                }
+                // -----------------------------------------------------------------
+                // 6c. Clamp to avoid negative dimensions
+                // -----------------------------------------------------------------
+                let (l, r, t, b) = geom_state.clamp(l, r, t, b);
 
-                // set
-                top_box.set_height_request(t as i32);
-                bottom_box.set_height_request(b as i32);
-                right_box.set_width_request(r as i32);
-                left_box.set_width_request(l as i32);
-
-                // update
-                sx.set(l);
-                sy.set(t);
-                sw.set(full_w - r - l);
-                sh.set(full_h - t - b);
-
-                // save
-                top.set(t);
-                bottom.set(b);
-                left.set(l);
-                right.set(r);
+                // -----------------------------------------------------------------
+                // 6d. Apply the new geometry to the UI and to the stored Cells
+                // -----------------------------------------------------------------
+                geom_state.apply(l, r, t, b, &(top_box, left_box, bottom_box, right_box));
             }
         ));
 
-        gest.connect_drag_end(move |_, _, _| {
-            // #[weak]
-            // top_box,
-            // #[weak]
-            // left_box,
-            // #[weak]
-            // bottom_box,
-            // #[weak]
-            // right_box,
-            // redraw toolbox
-            toolbox.draw_toolbox();
-        });
+        // --------------------------------------------------------------
+        // 7️⃣  Drag‑end: redraw the toolbox now that resizing is done
+        // --------------------------------------------------------------
+        gesture.connect_drag_end(glib::clone!(
+            #[strong]
+            toolbox,
+            move |_, _, _| {
+                toolbox.draw_toolbox();
+            }
+        ));
 
-        hdl
+        handle
     }
 }
