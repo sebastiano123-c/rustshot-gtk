@@ -1,0 +1,55 @@
+/* -------------------------------------------------
+   Font‑Awesome helpers – no @font-face needed
+   ------------------------------------------------- */
+.fas,
+.fal {
+  font-family: "Font Awesome 6 Free", Arial, sans-serif;
+}
+
+.fas {
+  font-weight: 900;
+}
+
+/* solid */
+.fal {
+  font-weight: 300;
+}
+
+/* light */
+
+/* -------------------------------------------------
+   UI component colours – using plain values (no vars)
+   ------------------------------------------------- */
+.transparent {
+  background: rgba(0, 0, 0, 0);
+}
+
+.gray-box {
+  background: rgba(71, 52, 114, 0.7);
+}
+
+/* Corner handle – hover effect */
+.corner-handle {
+  background: rgba(0, 0, 0, 0);
+}
+
+.corner-handle:hover {
+  background: rgba(214, 244, 237, 0.7);
+}
+
+/* Toolbox */
+.toolbox-btn {
+  font-size: 16px;
+  font-family: Arial, "Font Awesome 6 Free", sans-serif;
+  border-radius: 50%;
+  border: none;
+}
+
+.toolbox-btn:hover {
+  background: rgba(83, 98, 158, 0.9);
+}
+
+/* Pressed state */
+.pressed {
+  background: rgba(135, 186, 195, 1);
+}

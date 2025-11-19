@@ -1,0 +1,84 @@
+/* -------------------------------------------------
+   Font‑Awesome helpers – no @font-face needed
+   ------------------------------------------------- */
+.fas,
+.fal {
+  font-family: "Font Awesome 6 Free", Arial, sans-serif;
+}
+
+.fas {
+  font-weight: 900;
+}
+
+/* solid */
+.fal {
+  font-weight: 300;
+}
+
+/* light */
+
+/* -------------------------------------------------
+   UI component colours – using plain values (no vars)
+   ------------------------------------------------- */
+.transparent {
+  background: rgba(0, 0, 0, 0);
+}
+
+.tooltip {
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+}
+
+/* Dialog / modal */
+.color-dialog {
+  background: rgba(110, 10, 10, 1);
+}
+
+.gray-box {
+  background: rgba(109, 20, 20, 0.6);
+}
+
+/* Corner handle – hover effect */
+.corner-handle {
+  background: rgba(0, 0, 0, 0);
+}
+
+.corner-handle:hover {
+  background: rgba(255, 51, 0, 0.6);
+}
+
+/* Toolbox */
+.toolbox {
+  background: rgba(255, 255, 8, 0.8);
+}
+
+.toolbox-btn {
+  font-size: 16px;
+  font-family: Arial, "Font Awesome 6 Free", sans-serif;
+  border-radius: 50%;
+  border: none;
+}
+
+.toolbox-btn:hover {
+  background: rgba(204, 0, 0, 0.9);
+}
+
+/* Pressed state */
+.pressed {
+  background: rgba(120, 30, 20, 1);
+}
+
+/* Sub‑window */
+.subwin {
+  background: #333333;
+}
+
+/* Test colours (optional) */
+.test1 {
+  background: rgba(5, 51, 255, 0.6);
+}
+
+.test {
+  background: rgba(255, 51, 0, 0.6);
+  border: 2px dotted black;
+}

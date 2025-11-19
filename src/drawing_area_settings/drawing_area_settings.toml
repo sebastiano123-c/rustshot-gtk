@@ -1,0 +1,18 @@
+[color]
+red = 0.5
+green = 0.0
+blue = 0.0
+alpha = 1.0
+
+[size]
+init_arrow_size = 10.0
+init_arrow_width = 2.0
+init_freehand_size = 2.0
+init_line_size = 2.0
+init_box_border_size = 2.0
+init_arc_border_size = 2.0
+init_numbered_circles_radius = 20.0
+init_numbered_circles_font_size = 17.0
+init_numbered_circles_font_color_r = 1.0
+init_numbered_circles_font_color_g = 1.0
+init_numbered_circles_font_color_b = 1.0

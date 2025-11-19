@@ -1,78 +1,160 @@
-use gtk::prelude::*;
+mod imp;
+use super::geometry::GeometryState;
+// use crate::toolbox::buttons::{
+//     ArcButton, ArcButtonNoFill, ArrowButton, BoxButton, BoxButtonNoFill, ColorButton,
+//     CopyScreenshotButton, FreeHandButton, FullScreenButton, LineButton, NumberedCircleButton,
+//     SaveScreenshotButton, SettingsButton,
+// };
+use crate::toolbox_buttons::*;
+use rustshot_gtk::constants::TOOLBOX_BTN_SIZE;
+// mod buttons;
+use crate::toolbox_bar::ToolboxBar;
+use gtk::{glib, prelude::*, subclass::prelude::*};
 
-#[derive(Clone, Debug)]
-pub struct Toolbox {
-    buttons_width: i32,
-    n_buttons: usize,
-    central_box: gtk::Overlay,
-    bottom_box: gtk::Box,
-    right_box: gtk::Box,
-    top_box: gtk::Box,
-    left_box: gtk::Box,
-    buttons_list: Vec<gtk::Button>,
+glib::wrapper! {
+    pub struct Toolbox(ObjectSubclass<imp::Toolbox>)
+        @extends gtk::Box,
+        @implements gtk::Accessible, gtk::Actionable, gtk::Widget,  gtk::Buildable, gtk::ConstraintTarget;
+}
+
+impl Default for Toolbox {
+    fn default() -> Self {
+        glib::Object::new()
+    }
 }
 
 impl Toolbox {
-    pub fn new(
-        btn_width: i32,
-        central: gtk::Overlay,
-        top: gtk::Box,
-        left: gtk::Box,
-        bottom: gtk::Box,
-        right: gtk::Box,
-    ) -> Self {
-        Self {
-            buttons_width: btn_width,
-            n_buttons: 0,
-            central_box: central,
-            bottom_box: bottom,
-            right_box: right,
-            top_box: top,
-            left_box: left,
-            buttons_list: Vec::new(),
-            // is_toolbox_drawn: false,
-        }
+    pub fn is_button_pressed(&self) -> bool {
+        let imp = self.imp();
+        imp.button_pressed.get()
     }
 
-    fn create_toolbox(size: i32, orientation: gtk::Orientation, align: gtk::Align) -> gtk::Box {
-        let tb = gtk::Box::new(orientation, 0);
+    pub fn create_toolbox_buttons(&self, geom: &GeometryState) {
+        let imp = self.imp();
 
-        if orientation == gtk::Orientation::Horizontal {
-            tb.set_height_request(size);
-            tb.set_valign(align);
-            tb.set_halign(gtk::Align::Center);
-            tb.set_hexpand(true);
-        } else {
-            tb.set_width_request(size);
-            tb.set_halign(align);
-            tb.set_valign(gtk::Align::Center);
-        }
-        tb
+        // Full Circle
+        let btn = arc_button::ArcButton::default();
+        btn.attach_gesture(geom);
+        imp.buttons_list
+            .borrow_mut()
+            .push(btn.upcast_ref::<gtk::Widget>().clone());
+        imp.n_buttons.set(imp.n_buttons.get() + 1);
+
+        // Circle
+        let btn = arc_no_fill_button::ArcNoFillButton::default();
+        btn.attach_gesture(geom);
+        imp.buttons_list
+            .borrow_mut()
+            .push(btn.upcast_ref::<gtk::Widget>().clone());
+        imp.n_buttons.set(imp.n_buttons.get() + 1);
+
+        // Full Box
+        let btn = box_button::BoxButton::default();
+        btn.attach_gesture(geom);
+        imp.buttons_list
+            .borrow_mut()
+            .push(btn.upcast_ref::<gtk::Widget>().clone());
+        imp.n_buttons.set(imp.n_buttons.get() + 1);
+
+        // Box
+        let btn = box_no_fill_button::BoxNoFillButton::default();
+        btn.attach_gesture(geom);
+        imp.buttons_list
+            .borrow_mut()
+            .push(btn.upcast_ref::<gtk::Widget>().clone());
+        imp.n_buttons.set(imp.n_buttons.get() + 1);
+
+        // Arrow
+        let btn = arrow_button::ArrowButton::default();
+        btn.attach_gesture(&geom);
+        imp.buttons_list
+            .borrow_mut()
+            .push(btn.upcast_ref::<gtk::Widget>().clone());
+        imp.n_buttons.set(imp.n_buttons.get() + 1);
+
+        // Line
+        let btn = line_button::LineButton::default();
+        btn.attach_gesture(&geom);
+        imp.buttons_list
+            .borrow_mut()
+            .push(btn.upcast_ref::<gtk::Widget>().clone());
+        imp.n_buttons.set(imp.n_buttons.get() + 1);
+
+        // Freehand
+        let btn = freehand_button::FreehandButton::default();
+        btn.attach_gesture(&geom);
+        imp.buttons_list
+            .borrow_mut()
+            .push(btn.upcast_ref::<gtk::Widget>().clone());
+        imp.n_buttons.set(imp.n_buttons.get() + 1);
+
+        // Numbered circles
+        let btn = numbered_circle_button::NumberedCircleButton::default();
+        btn.attach_gesture(&geom);
+        imp.buttons_list
+            .borrow_mut()
+            .push(btn.upcast_ref::<gtk::Widget>().clone());
+        imp.n_buttons.set(imp.n_buttons.get() + 1);
+
+        // Colors
+        let btn = color_button::ColorButton::default();
+        btn.attach_gesture(&geom);
+        imp.buttons_list
+            .borrow_mut()
+            .push(btn.upcast_ref::<gtk::Widget>().clone());
+        imp.n_buttons.set(imp.n_buttons.get() + 1);
+
+        // Fullscreen
+        let btn = fullscreen_button::FullscreenButton::default();
+        btn.attach_gesture(&geom);
+        imp.buttons_list
+            .borrow_mut()
+            .push(btn.upcast_ref::<gtk::Widget>().clone());
+        imp.n_buttons.set(imp.n_buttons.get() + 1);
+
+        // Take screenshot
+        let btn = copy_screenshot_button::CopyScreenshotButton::default();
+        btn.attach_gesture(&geom);
+        imp.buttons_list
+            .borrow_mut()
+            .push(btn.upcast_ref::<gtk::Widget>().clone());
+        imp.n_buttons.set(imp.n_buttons.get() + 1);
+
+        // Save screenshot
+        let btn = save_screenshot_button::SaveScreenshotButton::default();
+        btn.attach_gesture(&geom);
+        imp.buttons_list
+            .borrow_mut()
+            .push(btn.upcast_ref::<gtk::Widget>().clone());
+        imp.n_buttons.set(imp.n_buttons.get() + 1);
+
+        // Record screen
+        let btn = screen_recorder::ScreenRecorder::default();
+        btn.attach_gesture(&geom);
+        imp.buttons_list
+            .borrow_mut()
+            .push(btn.upcast_ref::<gtk::Widget>().clone());
+        imp.n_buttons.set(imp.n_buttons.get() + 1);
+
+        // Settings
+        let btn = settings_button::SettingsButton::default();
+        btn.attach_gesture(&geom);
+        imp.buttons_list
+            .borrow_mut()
+            .push(btn.upcast_ref::<gtk::Widget>().clone());
+        imp.n_buttons.set(imp.n_buttons.get() + 1);
     }
 
-    pub fn create_toolbox_button(
-        &mut self,
-        label: &str,
-        tooltip_text: Option<&str>,
-    ) -> gtk::Button {
-        // Load Font Awesome Solid font
-        let btn = gtk::Button::with_label(label);
-        btn.set_tooltip_text(tooltip_text);
-        btn.add_css_class("toolbox-btn");
-        btn.set_width_request(self.buttons_width);
-        btn.set_height_request(self.buttons_width);
-
-        // add to list
-        self.buttons_list.push(btn.clone());
-        self.n_buttons += 1;
-
-        // return
-        btn
+    pub fn set_button_pressed(&self, pressed: bool) {
+        let imp = self.imp();
+        imp.button_pressed.set(pressed);
     }
 
-    pub fn draw_toolbox(&self) {
+    pub fn draw_toolbox(&self, geom: &GeometryState) {
+        let imp = self.imp();
+
         // number of buttons left to draw
-        let mut n_btn_left_to_draw: usize = self.n_buttons;
+        let mut n_btn_left_to_draw: usize = imp.n_buttons.get();
 
         // counter that accounts the gray box in which the toolbox is placed
         let mut gray_box_idx = 0;
@@ -100,19 +182,16 @@ impl Toolbox {
             // the problem is that it creates more space on the bottom!
             if no_space_left >= 4 && order_idx == 2 {
                 // create toolbox
-                let tb = Self::create_toolbox(
-                    self.buttons_width,
-                    gtk::Orientation::Horizontal,
-                    gtk::Align::Start,
+                let tb = ToolboxBar::default();
+                tb.new_fullscreen(&geom);
+                geom.central_overlay.add_overlay(&tb);
+                geom.central_overlay.queue_draw();
+                tb.fill_with_buttons(
+                    geom.central_overlay.width(),
+                    imp.n_buttons.get(),
+                    &imp.buttons_list.borrow(),
+                    &mut n_btn_left_to_draw,
                 );
-                tb.set_halign(gtk::Align::Center);
-
-                // append it to bottom gray box
-                self.central_box.add_overlay(&tb);
-                self.central_box.queue_draw();
-
-                // insert as many buttons as possible
-                self.attach_to_toolbox(self.central_box.width(), tb, &mut n_btn_left_to_draw);
             }
 
             // select gray box
@@ -120,7 +199,7 @@ impl Toolbox {
                 // Attach toolbox to bottom gray box
                 0 => {
                     // check if there is room to place the toolbox
-                    if order_idx * self.buttons_width > self.bottom_box.height() {
+                    if order_idx * TOOLBOX_BTN_SIZE > geom.bottom_box.get_edge() {
                         // else increment counter
                         gray_box_idx += 1;
 
@@ -131,153 +210,21 @@ impl Toolbox {
                         continue;
                     }
 
-                    // create full toolbox
-                    let full_tb = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-                    full_tb.set_height_request(self.buttons_width);
-
-                    // create left spacing
-                    let l_space = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-                    l_space.set_width_request(std::cmp::max(
-                        self.left_box.width() - self.buttons_width / 2 - 5,
-                        0,
-                    ));
-                    l_space.set_height_request(self.buttons_width);
-                    l_space.set_halign(gtk::Align::Start);
-
-                    // create toolbox
-                    let tb_cont = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-                    tb_cont.set_hexpand(true);
-                    let tb = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-                    tb.set_halign(gtk::Align::Center);
-                    tb.set_hexpand(true);
-                    tb_cont.append(&tb);
-
-                    // create right spacing
-                    let r_space = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-                    r_space.set_width_request(std::cmp::max(
-                        self.right_box.width() - self.buttons_width / 2 - 5,
-                        0,
-                    ));
-                    r_space.set_height_request(self.buttons_width);
-                    r_space.set_halign(gtk::Align::End);
-
-                    // append it to bottom gray box
-                    full_tb.append(&l_space);
-                    full_tb.append(&tb_cont);
-                    full_tb.append(&r_space);
-                    self.bottom_box.append(&full_tb);
-                    self.bottom_box.queue_draw();
+                    // Create horizontal toolbar
+                    let tb = ToolboxBar::default();
+                    tb.new_horizontal(gtk::Align::Start, &geom);
+                    geom.bottom_box.append(&tb);
 
                     // insert as many buttons as possible
-                    let l = std::cmp::max(self.central_box.width(), self.buttons_width + 10);
-                    self.attach_to_toolbox(l, tb, &mut n_btn_left_to_draw);
+                    let l = std::cmp::max(geom.central_overlay.width(), TOOLBOX_BTN_SIZE + 10);
 
-                    // set space left to zero
-                    no_space_left = 0;
-
-                    // increment counter
-                    gray_box_idx += 1;
-                }
-                // Attach toolbox to right gray box
-                1 => {
-                    // check if there is room to place the toolbox
-                    if order_idx * self.buttons_width > self.right_box.width() {
-                        // else increment counter
-                        gray_box_idx += 1;
-
-                        // add 1 to no space left value
-                        no_space_left += 1;
-
-                        // if not we need to go to the next iteration
-                        continue;
-                    }
-
-                    // create toolbox
-                    let tb = Self::create_toolbox(
-                        self.buttons_width,
-                        gtk::Orientation::Vertical,
-                        gtk::Align::Start,
+                    // Fill toolbar with buttons
+                    tb.fill_with_buttons(
+                        l,
+                        imp.n_buttons.get(),
+                        &imp.buttons_list.borrow(),
+                        &mut n_btn_left_to_draw,
                     );
-
-                    // set space left to zero
-                    no_space_left = 0;
-
-                    // append it to bottom gray box
-                    self.right_box.append(&tb);
-                    self.right_box.queue_draw();
-
-                    // insert as many buttons as possible
-                    self.attach_to_toolbox(self.right_box.height(), tb, &mut n_btn_left_to_draw);
-
-                    // increment counter
-                    gray_box_idx += 1;
-                }
-                // Attach toolbox to top gray box
-                2 => {
-                    // check if there is room to place the toolbox
-                    if order_idx * self.buttons_width > self.top_box.height() {
-                        // else increment counter
-                        gray_box_idx += 1;
-
-                        // add 1 to no space left value
-                        no_space_left += 1;
-
-                        // if not we need to go to the next iteration
-                        continue;
-                    }
-
-                    // the toolbox here aligns with the left otherwise, KEEP THIS LINE
-                    if order_idx == 1 {
-                        let space = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-                        space.set_height_request(self.top_box.height() - self.buttons_width);
-                        self.top_box.append(&space);
-                    } else if let Some(space) = self.top_box.first_child() {
-                        space.set_height_request(
-                            self.top_box.height() - self.buttons_width * order_idx,
-                        );
-                    }
-
-                    // create full toolbox
-                    let full_tb = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-                    full_tb.set_height_request(self.buttons_width);
-                    full_tb.set_valign(gtk::Align::End);
-
-                    // create left spacing
-                    let l_space = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-                    l_space.set_width_request(std::cmp::max(
-                        self.left_box.width() - self.buttons_width / 2 - 5,
-                        0,
-                    ));
-                    l_space.set_height_request(self.buttons_width);
-                    l_space.set_halign(gtk::Align::Start);
-
-                    // create toolbox
-                    let tb_cont = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-                    tb_cont.set_hexpand(true);
-                    let tb = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-                    tb.set_halign(gtk::Align::Center);
-                    tb.set_hexpand(true);
-                    tb_cont.append(&tb);
-
-                    // create right spacing
-                    let r_space = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-                    r_space.set_width_request(std::cmp::max(
-                        self.right_box.width() - self.buttons_width / 2 - 5,
-                        0,
-                    ));
-                    r_space.set_height_request(self.buttons_width);
-                    r_space.set_halign(gtk::Align::End);
-
-                    // append it to bottom gray box
-                    full_tb.append(&l_space);
-                    full_tb.append(&tb_cont);
-                    full_tb.append(&r_space);
-                    self.top_box.append(&full_tb);
-                    self.top_box.queue_draw();
-
-                    // insert as many buttons as possible
-                    let l = std::cmp::max(self.central_box.width(), self.buttons_width + 10);
-                    self.attach_to_toolbox(l, tb, &mut n_btn_left_to_draw);
 
                     // set space left to zero
                     no_space_left = 0;
@@ -286,14 +233,11 @@ impl Toolbox {
                     gray_box_idx += 1;
                 }
                 // Attach toolbox to left gray box
-                3 => {
+                1 => {
                     // check if there is room to place the toolbox
-                    if order_idx * self.buttons_width > self.left_box.width() {
+                    if order_idx * TOOLBOX_BTN_SIZE > geom.left_box.get_edge() {
                         // else increment counter
-                        gray_box_idx = 0;
-
-                        // increment order
-                        order_idx += 1;
+                        gray_box_idx += 1;
 
                         // add 1 to no space left value
                         no_space_left += 1;
@@ -302,30 +246,113 @@ impl Toolbox {
                         continue;
                     }
 
+                    // the toolbox here aligns with the left otherwise, KEEP THIS LINE
+                    if order_idx == 1 {
+                        let space = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+                        space.set_width_request(geom.left_box.get_edge() - TOOLBOX_BTN_SIZE);
+                        geom.left_box.append(&space);
+                    } else if let Some(space) = geom.left_box.first_child() {
+                        space.set_width_request(
+                            geom.left_box.get_edge() - TOOLBOX_BTN_SIZE * order_idx,
+                        );
+                    }
+
                     // create toolbox
-                    let tb = Self::create_toolbox(
-                        self.buttons_width,
-                        gtk::Orientation::Vertical,
-                        gtk::Align::End,
+                    let tb = ToolboxBar::default();
+                    tb.new_vertical(TOOLBOX_BTN_SIZE, gtk::Align::End);
+                    geom.left_box.append(&tb);
+
+                    // insert as many buttons as possible
+                    tb.fill_with_buttons(
+                        geom.central_overlay.height(),
+                        imp.n_buttons.get(),
+                        &imp.buttons_list.borrow(),
+                        &mut n_btn_left_to_draw,
                     );
+
+                    // set space left to zero
+                    no_space_left = 0;
+
+                    // increment counter
+                    gray_box_idx += 1;
+                }
+                // Attach toolbox to top gray box
+                2 => {
+                    // check if there is room to place the toolbox
+                    if order_idx * TOOLBOX_BTN_SIZE > geom.top_box.get_edge() {
+                        // else increment counter
+                        gray_box_idx += 1;
+
+                        // add 1 to no space left value
+                        no_space_left += 1;
+
+                        // if not we need to go to the next iteration
+                        continue;
+                    }
 
                     // the toolbox here aligns with the left otherwise, KEEP THIS LINE
                     if order_idx == 1 {
                         let space = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-                        space.set_width_request(self.left_box.width() - self.buttons_width);
-                        self.left_box.append(&space);
-                    } else if let Some(space) = self.left_box.first_child() {
-                        space.set_width_request(
-                            self.left_box.width() - self.buttons_width * order_idx,
+                        space.set_height_request(geom.top_box.get_edge() - TOOLBOX_BTN_SIZE);
+                        geom.top_box.append(&space);
+                    } else if let Some(space) = geom.top_box.first_child() {
+                        space.set_height_request(
+                            geom.top_box.get_edge() - TOOLBOX_BTN_SIZE * order_idx,
                         );
                     }
 
-                    // append it to bottom gray box
-                    self.left_box.append(&tb);
-                    self.left_box.queue_draw();
+                    // Create horizontal toolbar
+                    let tb = ToolboxBar::default();
+                    tb.new_horizontal(gtk::Align::End, &geom);
+                    geom.top_box.append(&tb);
 
                     // insert as many buttons as possible
-                    self.attach_to_toolbox(self.left_box.height(), tb, &mut n_btn_left_to_draw);
+                    let l = std::cmp::max(geom.central_overlay.width(), TOOLBOX_BTN_SIZE + 10);
+
+                    // Fill toolbar with buttons
+                    tb.fill_with_buttons(
+                        l,
+                        imp.n_buttons.get(),
+                        &imp.buttons_list.borrow(),
+                        &mut n_btn_left_to_draw,
+                    );
+
+                    // set space left to zero
+                    no_space_left = 0;
+
+                    // increment counter
+                    gray_box_idx += 1;
+                }
+                // Attach toolbox to right gray box
+                3 => {
+                    // check if there is room to place the toolbox
+                    if order_idx * TOOLBOX_BTN_SIZE > geom.right_box.get_edge() {
+                        // else increment counter
+                        gray_box_idx = 0;
+
+                        // increment order
+                        order_idx += 1;
+
+                        // add 1 to no space right value
+                        no_space_left += 1;
+
+                        // if not we need to go to the next iteration
+                        continue;
+                    }
+
+                    // create toolbox
+                    let tb = ToolboxBar::default();
+                    tb.new_vertical(TOOLBOX_BTN_SIZE, gtk::Align::Start);
+                    geom.right_box.append(&tb);
+
+                    // insert as many buttons as possible
+                    // Fill toolbar with buttons
+                    tb.fill_with_buttons(
+                        geom.central_overlay.height(),
+                        imp.n_buttons.get(),
+                        &imp.buttons_list.borrow(),
+                        &mut n_btn_left_to_draw,
+                    );
 
                     // if the counter is 3 it means we need to reset it for the next iteration
                     gray_box_idx = 0;
@@ -343,47 +370,43 @@ impl Toolbox {
         }
     }
 
-    fn attach_to_toolbox(&self, length: i32, toolbox: gtk::Box, n_btns_left_to_draw: &mut usize) {
-        let l = length;
-
-        // get how many buttons can be placed inside bottom toolbox
-        let n: usize = (l / (self.buttons_width)) as usize;
-
-        // find the minimum
-        let max_n_for_bottom_toolbox: usize = std::cmp::min(*n_btns_left_to_draw, n);
-
-        // last idx
-        let last_idx = self.n_buttons - *n_btns_left_to_draw;
-
-        // fill the bottom toolbox until the maximum is reached
-        for btn_idx in 0..max_n_for_bottom_toolbox {
-            toolbox.append(&self.buttons_list[last_idx + btn_idx]);
-        }
-
-        *n_btns_left_to_draw -= max_n_for_bottom_toolbox;
-    }
-
     pub fn remove_css_class(&self, class: &str) {
+        let imp = self.imp();
         //  every button from their parents before attaching them again
-        for btn in &self.buttons_list {
+        for btn in &*imp.buttons_list.borrow() {
             btn.remove_css_class(class);
         }
     }
 
-    pub fn stop_toolbox(&self) {
+    pub fn stop_toolbox(&self, geom: &GeometryState) {
+        let imp = self.imp();
         // -----------------------------------------------------------------
         // 1️⃣  Remove every button from the box that currently owns it.
         // -----------------------------------------------------------------
-        for btn in &self.buttons_list {
+        for btn in imp.buttons_list.borrow().iter() {
+            let widget: &gtk::Widget = btn;
+
             // `btn.parent()` returns an `Option<Widget>`.  If it exists and is a
             // `gtk::Box`, we can safely call `remove`.
-            if let Some(parent_box) = btn.parent().and_then(|w| w.downcast::<gtk::Box>().ok()) {
-                parent_box.remove(btn);
+            if let Some(parent) = widget.parent() {
+                // -----------------------------------------------------------------
+                // 4️⃣  Try to down‑cast the parent to a `gtk::Box`.
+                // -----------------------------------------------------------------
+                if let Ok(parent_box) = parent.clone().downcast::<gtk::Box>() {
+                    // -----------------------------------------------------------------
+                    // 5️⃣  Remove the *inner* widget from the box.
+                    // -----------------------------------------------------------------
+                    // `remove` wants a reference to something that implements
+                    // `IsA<gtk::Widget>`.  `widget` (the inner widget) satisfies
+                    // that requirement.
+                    parent_box.remove(widget);
+                } else {
+                    // Parent exists but is not a Box – useful for debugging.
+                    eprintln!("toolbox::stop_toolbox – parent of a button is not a gtk::Box");
+                }
             } else {
-                // Uncomment the line below if you want diagnostics during dev.
-                eprintln!(
-                    "toolbox::stop_toolbox -- Button had no Box parent (or parent not a Box)"
-                );
+                // Button has no parent at all (already removed, or never added).
+                eprintln!("toolbox::stop_toolbox – button had no parent widget");
             }
         }
 
@@ -391,25 +414,19 @@ impl Toolbox {
         // 2️⃣  Remove the central overlay *only* when its deepest child is a
         //     `gtk::Button`.
         // -----------------------------------------------------------------
-        if let Some(overlay) = self.central_box.last_child()
+        if let Some(overlay) = geom.central_overlay.last_child()
             && let Some(inner) = overlay.last_child()
             && inner.type_() == gtk::Button::static_type()
         {
-            self.central_box.remove_overlay(&overlay);
+            geom.central_overlay.remove_overlay(&overlay);
         }
 
         // -----------------------------------------------------------------
         // 3️⃣  Drain the four gray‑box containers with a tiny helper.
         // -----------------------------------------------------------------
-        fn drain(box_ref: &gtk::Box) {
-            while let Some(child) = box_ref.first_child() {
-                box_ref.remove(&child);
-            }
-        }
-
-        drain(&self.bottom_box);
-        drain(&self.right_box);
-        drain(&self.top_box);
-        drain(&self.left_box);
+        geom.top_box.remove_childs();
+        geom.left_box.remove_childs();
+        geom.bottom_box.remove_childs();
+        geom.right_box.remove_childs();
     }
 }
