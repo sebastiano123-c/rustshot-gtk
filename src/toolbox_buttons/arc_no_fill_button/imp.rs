@@ -1,5 +1,5 @@
 use gtk::{glib, prelude::*, subclass::prelude::*};
-use rustshot_gtk::constants::{CSS_CLASS_TOOLBOX_BTN, TOOLBOX_BTN_SIZE};
+use rustshot_gtk::constants::{CSS_CLASS_SOLID, CSS_CLASS_TOOLBOX_BTN, TOOLBOX_BTN_SIZE};
 
 #[derive(Debug, Default)]
 pub struct ArcNoFillButton {}
@@ -18,7 +18,7 @@ impl ObjectImpl for ArcNoFillButton {
         obj.set_label("\u{f111}");
         obj.set_tooltip_text(Some("Draw circle without fill"));
         obj.add_css_class(CSS_CLASS_TOOLBOX_BTN);
-        obj.add_css_class("fas");
+        obj.add_css_class(CSS_CLASS_SOLID);
         obj.set_width_request(TOOLBOX_BTN_SIZE);
         obj.set_height_request(TOOLBOX_BTN_SIZE);
     }

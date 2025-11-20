@@ -1,8 +1,9 @@
 mod imp;
 
-use gtk::{glib, prelude::*, subclass::prelude::*};
+use gtk::{gio, glib, prelude::*, subclass::prelude::*};
 
 use crate::geometry::GeometryState;
+use rustshot_gtk::constants::CSS_CLASS_PRESSED_PERSISTENT;
 
 glib::wrapper! {
     pub struct ScreenRecorder(ObjectSubclass<imp::ScreenRecorder>)
@@ -21,25 +22,79 @@ impl ScreenRecorder {
         let gesture = gtk::GestureClick::new();
         self.add_controller(gesture.clone());
         // TODO: how to interrupt video recording?
+        // TODO: How to remove the buttons from video recording if the screen is full screen?
 
-        gesture.connect_pressed(glib::clone!(
-            #[strong]
-            geometry,
-            move |_, _, _, _| {
-                geometry.toolbox.stop_toolbox(&geometry);
-            }
-        ));
+        // gesture.connect_pressed(glib::clone!(
+        //     #[strong]
+        //     geometry,
+        //     move |_, _, _, _| {
+        //         geometry.toolbox.stop_toolbox(&geometry);
+        //     }
+        // ));
 
         let se = self;
-        gesture.connect_stopped(glib::clone!(
+        self.connect_clicked(glib::clone!(
             #[strong]
             geometry,
             #[weak]
             se,
             move |_| {
-                let dim = geometry.get_screenshot_size();
-                // start recording screen
-                se.start_record_screen(dim[0], dim[1], dim[2], dim[3]);
+                if se.imp().is_recording.get() {
+                    se.stop_recording();
+                    se.remove_css_class(CSS_CLASS_PRESSED_PERSISTENT);
+
+                    // open the file dialog
+                    let dialog = gtk::FileDialog::builder()
+                        .title("Save File")
+                        .accept_label("Save")
+                        .initial_name("capture.mkv")
+                        .build();
+
+                    // Create a cancellable instance
+                    let cancellable = gio::Cancellable::new();
+
+                    // Open the dialog
+                    let geometry = geometry.clone();
+                    let screen_rec_clone = se.clone();
+                    let toolbox = geometry.toolbox.clone();
+
+                    // clone
+                    dialog.save(
+                        Some(&geometry.window.clone()),
+                        Some(&cancellable),
+                        move |file| {
+                            match file {
+                                Ok(file) => {
+                                    // // wait
+                                    // std::thread::sleep(std::time::Duration::from_millis(50));
+
+                                    // move the saved recording into the user defined location
+                                    let _output = std::process::Command::new("mv")
+                                        .arg(screen_rec_clone.get_file_path())
+                                        .arg(file.path().expect("Invalid file path"))
+                                        .output()
+                                        .expect("Error in moving file");
+
+                                    // // finally we need to destroy the windows objects
+                                    // subwin_clone.destroy();
+                                    // window.destroy();
+                                }
+                                Err(err) => {
+                                    eprintln!("Error selecting file: {}", err);
+
+                                    // probably you exit the file dialog, so you want to continue
+                                    // editing...
+                                    toolbox.draw_toolbox(&geometry);
+                                }
+                            }
+                        },
+                    );
+                } else {
+                    let dim = geometry.get_screenshot_size();
+                    // start recording screen
+                    se.start_record_screen(dim[0], dim[1], dim[2], dim[3]);
+                    se.add_css_class(CSS_CLASS_PRESSED_PERSISTENT);
+                }
             }
         ));
     }

@@ -50,6 +50,6 @@
 }
 
 /* Pressed state */
-.pressed {
+.pressed, .pressed-persistent {
   background: rgba(135, 186, 195, 1);
 }
