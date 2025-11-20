@@ -1,6 +1,6 @@
 use crate::drawing_area_manager::DrawingAreaManager;
 use crate::edge::GrayEdge;
-use rustshot_gtk::constants::CSS_FILE_PATH;
+use rustshot_gtk::constants::{CSS_CLASS_PRESSED, CSS_FILE_PATH};
 use std::io::Write;
 // use crate::handles::Handles;
 use crate::drawing_area_settings::SettingsRc;
@@ -48,6 +48,7 @@ impl GeometryState {
 
         // create window object
         let window = gtk::ApplicationWindow::new(app);
+        window.set_decorated(false);
         window.add_css_class(CSS_CLASS_TRANSPARENT);
 
         // Set window size
@@ -155,6 +156,34 @@ impl GeometryState {
 
         // toolbox
         let settings_window = self.settings_window.clone();
+
+        ////////////////////////////////////////////////
+        // Gesture exit window
+        ////////////////////////////////////////////////
+        let keyboard_ctrl = gtk::EventControllerKey::new();
+        geom.window.add_controller(keyboard_ctrl.clone());
+        keyboard_ctrl.connect_key_pressed(glib::clone!(
+            #[strong]
+            geom,
+            move |_, _keyval, keycode, _state| {
+                // if 'esc' is pressed
+                if keycode == 9 {
+                    geom.settings_window.set_visible(false);
+                    if geom.toolbox.is_button_pressed() {
+                        geom.screenshot_box.set_screenshot_box_sensitivity(true);
+                        geom.drawing.set_drawing(false);
+                        geom.toolbox.set_button_pressed(false);
+                        geom.toolbox.remove_css_class(CSS_CLASS_PRESSED);
+                    } else {
+                        // finally we need to destroy the windows objects
+                        geom.settings_window.destroy();
+                        geom.window.destroy();
+                        return glib::signal::Propagation::Stop;
+                    }
+                }
+                glib::signal::Propagation::Proceed
+            }
+        ));
 
         // ---------------------------------------
         // Install drag gesture for the screenshot creation
