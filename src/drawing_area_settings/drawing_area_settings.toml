@@ -1,18 +1,76 @@
-[color]
-red = 0.5
-green = 0.0
-blue = 0.0
-alpha = 1.0
+[arc]
+fill = true
+fill_r = 1.0
+fill_g = 0.0
+fill_b = 0.0
+fill_a = 1.0
+border = true
+border_size = 1.0
+border_r = 0.0
+border_g = 0.0
+border_b = 0.0
+border_a = 1.0
 
-[size]
-init_arrow_size = 10.0
-init_arrow_width = 2.0
-init_freehand_size = 2.0
-init_line_size = 2.0
-init_box_border_size = 2.0
-init_arc_border_size = 2.0
-init_numbered_circles_radius = 20.0
-init_numbered_circles_font_size = 17.0
-init_numbered_circles_font_color_r = 1.0
-init_numbered_circles_font_color_g = 1.0
-init_numbered_circles_font_color_b = 1.0
+[rect]
+fill = true
+fill_r = 1.0
+fill_g = 0.0
+fill_b = 0.0
+fill_a = 1.0
+border = true
+border_size = 1.0
+border_r = 0.0
+border_g = 0.0
+border_b = 0.0
+border_a = 1.0
+
+[line]
+color_r = 1.0
+color_g = 0.0
+color_b = 0.0
+color_a = 1.0
+size = 1.0
+line_cap = "round"
+line_join = "round"
+
+[arrow]
+color_r = 1.0
+color_g = 0.0
+color_b = 0.0
+color_a = 1.0
+size = 2.0
+line_cap = "round"
+line_join = "round"
+arrow_size = 6.0
+
+[freehand]
+color_r = 1.0
+color_g = 0.0
+color_b = 0.0
+color_a = 1.0
+size = 4.0
+tool = "pen"
+
+[numbered_circle]
+fill = true
+fill_r = 1.0
+fill_g = 0.0
+fill_b = 0.0
+fill_a = 1.0
+border = true
+border_size = 1.0
+border_r = 0.0
+border_g = 0.0
+border_b = 0.0
+border_a = 1.0
+number = 1
+font_size = 15.0
+font_face = "Sans Bold Italic 15"
+font_weight = "bold"
+font_slant = "normal"
+font_r = 0.0
+font_g = 0.0
+font_b = 0.0
+font_a = 1.0
+radius = 20.0
+

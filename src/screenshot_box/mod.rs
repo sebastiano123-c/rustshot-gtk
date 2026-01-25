@@ -22,7 +22,10 @@ impl Default for ScreenshotBox {
 impl ScreenshotBox {
     pub fn set_screenshot_box_sensitivity(&self, sensitive: bool) {
         let imp = self.imp();
-        imp.central_handle_sensitive.set(sensitive);
+
+        for handle in &*imp.handles.borrow_mut() {
+            handle.set_sensitive(sensitive);
+        }
     }
 
     pub fn get_screenshot_box_sensitivity(&self) -> bool {

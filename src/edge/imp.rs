@@ -45,3 +45,4 @@ impl BoxImpl for GrayEdge {}
 
 // Trait shared by all widgets
 impl WidgetImpl for GrayEdge {}
+impl OrientableImpl for GrayEdge {}

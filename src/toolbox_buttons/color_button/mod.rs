@@ -6,8 +6,8 @@ use gtk::{gio, glib, prelude::*};
 
 glib::wrapper! {
     pub struct ColorButton(ObjectSubclass<imp::ColorButton>)
-        @extends gtk::Button, gtk::Widget,
-        @implements gtk::Accessible, gtk::Buildable, gtk::ConstraintTarget, gtk::Actionable;
+        @extends gtk::ColorDialogButton, gtk::Widget,
+        @implements gtk::Accessible, gtk::Button, gtk::Buildable, gtk::ConstraintTarget, gtk::Actionable;
 }
 
 impl Default for ColorButton {
@@ -53,7 +53,7 @@ impl ColorButton {
                             geom.settings.color.set_value("green", g);
                             geom.settings.color.set_value("blue", b);
                             geom.settings.color.set_value("alpha", a);
-                            geom.drawing.set_rgba(r, g, b, a);
+                            // geom.drawing.set_rgba(r, g, b, a);
                         } else {
                             println!("No color found");
                         }

@@ -5,7 +5,6 @@ use std::io::Write;
 // use crate::handles::Handles;
 use crate::drawing_area_settings::SettingsRc;
 use crate::screenshot_box::ScreenshotBox;
-use crate::settings_window::SettingsWindow;
 use crate::toolbox::Toolbox;
 
 use gtk::prelude::*;
@@ -13,7 +12,7 @@ use gtk::{gdk, gio, glib};
 use rustshot_gtk::constants::CSS_CLASS_TRANSPARENT;
 
 /// Stores the mutable geometry values used by the drag callbacks.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct GeometryState {
     pub window: gtk::ApplicationWindow,
 
@@ -28,7 +27,6 @@ pub struct GeometryState {
     pub screenshot_box: ScreenshotBox,
 
     pub settings: SettingsRc,
-    pub settings_window: SettingsWindow,
     pub toolbox: Toolbox,
 
     // Layout
@@ -43,50 +41,78 @@ pub struct GeometryState {
 impl GeometryState {
     /// New geometry
     pub fn new(app: &gtk::Application) -> Self {
+        // let st = std::time::Instant::now();
+
         // set css style
         Self::set_css();
+
+        // let stop = st.elapsed().as_millis();
+        //println!("Elapsed: {}", stop);
 
         // create window object
         let window = gtk::ApplicationWindow::new(app);
         window.set_decorated(false);
         window.add_css_class(CSS_CLASS_TRANSPARENT);
 
+        // let stop = st.elapsed().as_millis();
+        //println!("Elapsed: {}", stop);
+
         // Set window size
         let (w, h): (i32, i32) = Self::get_monitor_size();
         window.set_default_size(w, h);
+
+        // let stop = st.elapsed().as_millis();
+        //println!("Elapsed: {}", stop);
 
         // create main layout
         let overlay = gtk::Overlay::new();
         overlay.add_css_class(CSS_CLASS_TRANSPARENT);
         window.set_child(Some(&overlay));
 
+        // let stop = st.elapsed().as_millis();
+        //println!("Elapsed: {}", stop);
+
         // create drawing area
         let draw = DrawingAreaManager::default();
         overlay.add_overlay(&draw);
 
+        // let stop = st.elapsed().as_millis();
+        //println!("Elapsed: {}", stop);
+
         // screenshot boxes layout
         let layout: gtk::Box = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        layout.set_width_request(w);
+        layout.set_height_request(h);
         layout.add_css_class(CSS_CLASS_TRANSPARENT);
         overlay.add_overlay(&layout);
 
+        // let stop = st.elapsed().as_millis();
+        //println!("Elapsed: {}", stop);
+
         // top box
-        // let top_b: GrayEdge = GrayEdge::new(&layout, h / 2, None);
         let top_b: GrayEdge = GrayEdge::default();
-        top_b.set(h / 2, None);
+        top_b.set_v(h / 2, w, gtk::Align::Start, gtk::Align::End);
         layout.append(&top_b);
+
+        // let stop = st.elapsed().as_millis();
+        //println!("Elapsed: {}", stop);
 
         // Central box contains left and right box
         let central_b: gtk::Box = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-        central_b.add_css_class(CSS_CLASS_TRANSPARENT);
         central_b.set_vexpand(true);
-        central_b.set_hexpand(true);
+        central_b.add_css_class(CSS_CLASS_TRANSPARENT);
         layout.append(&central_b);
 
+        // let stop = st.elapsed().as_millis();
+        //println!("Elapsed: {}", stop);
+
         // Left box
-        // let left_b: GrayEdge = GrayEdge::new(&central_b, w / 2, Some(gtk::Align::Start));
         let left_b: GrayEdge = GrayEdge::default();
-        left_b.set(w / 2, Some(gtk::Align::Start));
+        left_b.set_h(w / 2, gtk::Align::End, gtk::Align::Fill);
         central_b.append(&left_b);
+
+        // let stop = st.elapsed().as_millis();
+        //println!("Elapsed: {}", stop);
 
         // Screenshot box must be inside an Overlay
         let overlay = gtk::Overlay::new();
@@ -95,30 +121,42 @@ impl GeometryState {
         overlay.add_overlay(&screenshot_b);
         central_b.append(&overlay);
 
+        // let stop = st.elapsed().as_millis();
+        //println!("Elapsed: {}", stop);
+
         // right box
-        // let right_b: GrayEdge = GrayEdge::new(&central_b, w / 2, Some(gtk::Align::End));
         let right_b: GrayEdge = GrayEdge::default();
-        right_b.set(w / 2, Some(gtk::Align::End));
+        right_b.set_h(w / 2, gtk::Align::Start, gtk::Align::Fill);
         central_b.append(&right_b);
 
+        // let stop = st.elapsed().as_millis();
+        //println!("Elapsed: {}", stop);
+
         // bottom box
-        // let bottom_b: GrayEdge = GrayEdge::new(&layout, h / 2, None);
         let bottom_b: GrayEdge = GrayEdge::default();
-        bottom_b.set(h / 2, None);
+        bottom_b.set_v(h / 2, w, gtk::Align::Start, gtk::Align::Start);
         layout.append(&bottom_b);
+
+        // let stop = st.elapsed().as_millis();
+        //println!("Elapsed: {}", stop);
 
         // Create drawing area settings
         let settings_rc: SettingsRc = SettingsRc::new();
 
-        // Create drawing area settings
-        let settings_window: SettingsWindow = SettingsWindow::default();
-        settings_window.create_window(&settings_rc);
+        // let stop = st.elapsed().as_millis();
+        //println!("Elapsed: {}", stop);
 
         // Create Toolbox object
         let toolbox: Toolbox = Toolbox::default();
 
+        // let stop = st.elapsed().as_millis();
+        //println!("Elapsed: {}", stop);
+
         // Set main window size and present
         window.present();
+
+        // let stop = st.elapsed().as_millis();
+        //println!("Elapsed: {}", stop);
 
         Self {
             window: window.clone(),
@@ -129,7 +167,6 @@ impl GeometryState {
             central_overlay: overlay,
             screenshot_box: screenshot_b,
             settings: settings_rc,
-            settings_window: settings_window,
             toolbox: toolbox,
             layout,
             drawing: draw,
@@ -138,24 +175,21 @@ impl GeometryState {
         }
     }
 
-    pub fn attach_gestures(&self) {
+    pub fn attach_gestures(&self) -> std::io::Result<()> {
         // geometry
         let geom = self;
 
         // Create toolbox buttons
-        self.toolbox.create_toolbox_buttons(&geom);
+        self.toolbox.create_toolbox_buttons(geom)?;
 
         // Make screenshot box resizable
-        self.screenshot_box.attach_handles_gesture(&geom);
+        self.screenshot_box.attach_handles_gesture(geom);
 
         // layout
         let layout = self.layout.clone();
 
         // drawing area
         let drawing = self.drawing.clone();
-
-        // toolbox
-        let settings_window = self.settings_window.clone();
 
         ////////////////////////////////////////////////
         // Gesture exit window
@@ -168,7 +202,6 @@ impl GeometryState {
             move |_, _keyval, keycode, _state| {
                 // if 'esc' is pressed
                 if keycode == 9 {
-                    geom.settings_window.set_visible(false);
                     if geom.toolbox.is_button_pressed() {
                         geom.screenshot_box.set_screenshot_box_sensitivity(true);
                         geom.drawing.set_drawing(false);
@@ -176,7 +209,6 @@ impl GeometryState {
                         geom.toolbox.remove_css_class(CSS_CLASS_PRESSED);
                     } else {
                         // finally we need to destroy the windows objects
-                        geom.settings_window.destroy();
                         geom.window.destroy();
                         return glib::signal::Propagation::Stop;
                     }
@@ -217,7 +249,9 @@ impl GeometryState {
                 layout.remove_controller(gest);
 
                 // draw toolbox
-                geom.toolbox.draw_toolbox(&geom);
+                geom.toolbox
+                    .draw_toolbox(&geom)
+                    .expect("GeometryState connect_drag_end error");
             }
         ));
 
@@ -231,8 +265,6 @@ impl GeometryState {
 
         // screenshot_box.add_controller(draw_box.clone());
         draw_gesture.connect_drag_begin(glib::clone!(
-            #[strong]
-            settings_window,
             #[weak]
             drawing,
             move |_, x, y| {
@@ -244,7 +276,6 @@ impl GeometryState {
                             top.get_edge_f64() /*+ 10.0*/ + y,
                         );
                     drawing.queue_draw(); // Request a redraw
-                    settings_window.set_visible(false);
                 }
             }
         ));
@@ -262,7 +293,9 @@ impl GeometryState {
             if drawing.is_drawing() {
                 drawing.drag_end();
             }
-        },));
+        }));
+
+        Ok(())
     }
 
     pub fn set_new_geometry_f64(&self, top: f64, left: f64, bottom: f64, right: f64) {
@@ -336,7 +369,7 @@ impl GeometryState {
         let y = self.top_box.get_edge();
         let w = self.full_w - x - self.right_box.get_edge();
         let h = self.full_h - y - self.bottom_box.get_edge();
-        return [x, y, w, h];
+        [x, y, w, h]
     }
 
     pub fn take_screenshot(&self) {

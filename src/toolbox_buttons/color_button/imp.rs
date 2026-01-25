@@ -15,7 +15,7 @@ impl ObjectImpl for ColorButton {
     fn constructed(&self) {
         self.parent_constructed();
         let obj = self.obj();
-        obj.set_label("\u{f53f}");
+        // obj.set_label("\u{f53f}");
         obj.set_tooltip_text(Some("Pick color"));
         obj.add_css_class(CSS_CLASS_TOOLBOX_BTN);
         obj.set_width_request(TOOLBOX_BTN_SIZE);

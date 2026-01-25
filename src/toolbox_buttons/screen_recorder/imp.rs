@@ -59,6 +59,10 @@ impl ObjectImpl for ScreenRecorder {
         self.parent_constructed();
         let obj = self.obj();
         obj.set_label("\u{f03d}");
+        obj.set_hexpand(false);
+        obj.set_vexpand(false);
+        obj.set_halign(gtk::Align::End);
+        obj.set_valign(gtk::Align::End);
         obj.set_tooltip_text(Some(r#"Record screen"#));
         obj.add_css_class(CSS_CLASS_TOOLBOX_BTN);
         obj.set_width_request(TOOLBOX_BTN_SIZE);

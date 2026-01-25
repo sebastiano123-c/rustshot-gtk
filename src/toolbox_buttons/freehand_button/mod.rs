@@ -2,6 +2,7 @@ mod imp;
 
 use crate::drawing_area_manager::drawables::{DrawableCollection, FreeHandDraw};
 use crate::toolbox_buttons::*;
+use crate::toolbox_settings_box::freehand::*;
 
 use crate::geometry::GeometryState;
 use gtk::{glib, prelude::*};
@@ -19,16 +20,33 @@ impl Default for FreehandButton {
 }
 
 impl FreehandButton {
-    pub fn attach_gesture(&self, geometry: &GeometryState) {
+    pub fn attach_gesture(&self, geom: &GeometryState) {
+        // Create settings box
+        let settings_box = FreehandSettingsBox::default();
+        settings_box.new_horizontal(gtk::Align::Center);
+        settings_box
+            .populate_with_settings(geom)
+            .expect("FreehandButton attach_gesture error");
+
         self.connect_clicked(glib::clone!(
             #[strong]
-            geometry,
+            geom,
+            #[strong]
+            settings_box,
             move |b| {
-                toggle_drawing(b.upcast_ref::<gtk::Widget>(), &geometry, || {
+                toggle_drawing(b.upcast_ref::<gtk::Widget>(), &geom, || {
                     // Create drawable
-                    let drawable =
-                        DrawableCollection::FreeHands(FreeHandDraw::new(&geometry.settings, None));
-                    geometry.drawing.create_new_drawable(&drawable);
+                    let drawable = DrawableCollection::FreeHands(FreeHandDraw::new(&geom.settings));
+                    geom.drawing.create_new_drawable(&drawable);
+
+                    // Set settings box
+                    geom.toolbox.stop_toolbox(&geom);
+                    geom.toolbox
+                        .set_settings_box(Some(settings_box.upcast_ref::<gtk::Widget>().clone()))
+                        .expect("FreehandButton error in gesture connect_clicked set_settings_box");
+                    geom.toolbox
+                        .draw_toolbox(&geom)
+                        .expect("FreehandButton error in gesture connect_click draw_toolbox");
                 });
             }
         ));

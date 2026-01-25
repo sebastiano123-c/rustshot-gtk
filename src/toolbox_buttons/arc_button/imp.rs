@@ -1,5 +1,5 @@
 use gtk::{glib, prelude::*, subclass::prelude::*};
-use rustshot_gtk::constants::{CSS_CLASS_TOOLBOX_BTN, TOOLBOX_BTN_SIZE};
+use rustshot_gtk::constants::{CSS_CLASS_SOLID, CSS_CLASS_TOOLBOX_BTN, TOOLBOX_BTN_SIZE};
 
 #[derive(Debug, Default)]
 pub struct ArcButton {}
@@ -16,12 +16,17 @@ impl ObjectImpl for ArcButton {
         self.parent_constructed();
         let obj = self.obj();
         obj.set_label("\u{f111}");
-        obj.set_tooltip_text(Some("Draw filled circle"));
+        obj.set_hexpand(false);
+        obj.set_vexpand(false);
+        obj.set_halign(gtk::Align::End);
+        obj.set_valign(gtk::Align::End);
+        obj.set_tooltip_text(Some("Draw circle"));
         obj.add_css_class(CSS_CLASS_TOOLBOX_BTN);
+        obj.add_css_class(CSS_CLASS_SOLID);
         obj.set_width_request(TOOLBOX_BTN_SIZE);
         obj.set_height_request(TOOLBOX_BTN_SIZE);
     }
 }
 
 impl WidgetImpl for ArcButton {}
-impl ButtonImpl for ArcButton {} // Important: implement the Button v‑table
+impl ButtonImpl for ArcButton {}

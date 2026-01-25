@@ -6,21 +6,24 @@ mod geometry;
 mod handle;
 mod rustshot_gui;
 mod screenshot_box;
-mod settings_window;
+mod spin_button;
 mod toolbox;
 mod toolbox_bar;
 mod toolbox_buttons;
+mod toolbox_settings_box;
 use geometry::GeometryState;
 use rustshot_gtk::constants::APP_NAME;
 
-fn main() {
+fn main() -> std::io::Result<()> {
     let app = gtk::Application::new(Some(APP_NAME), Default::default());
 
     app.connect_activate(|app| {
         // Create GgeometryState with widgets
-        let geom: GeometryState = GeometryState::new(&app);
-        geom.attach_gestures();
+        let geom: GeometryState = GeometryState::new(app);
+        geom.attach_gestures().expect("Error in attaching gesture");
     });
 
     app.run();
+
+    Ok(())
 }

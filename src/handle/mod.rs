@@ -52,44 +52,76 @@ impl Handle {
             #[weak]
             obj,
             move |_, dx, dy| {
-                // Read the current values from the Cells
-                let mut l = geometry.left_box.get_edge_f64();
-                let mut r = geometry.right_box.get_edge_f64();
-                let mut t = geometry.top_box.get_edge_f64();
-                let mut b = geometry.bottom_box.get_edge_f64();
+                // Move handles on if the screenshot box is sensitive
+                if geometry.screenshot_box.get_screenshot_box_sensitivity() {
+                    // Read the current values from the Cells
+                    let mut l = geometry.left_box.get_edge_f64();
+                    let mut r = geometry.right_box.get_edge_f64();
+                    let mut t = geometry.top_box.get_edge_f64();
+                    let mut b = geometry.bottom_box.get_edge_f64();
 
-                // Adjust according to which handle is being dragged
-                match obj.col.get() {
-                    0 => l += dx, // left side
-                    1 => {
-                        // centre column – only move horizontally when the central
-                        // handle is marked as “sensitive”.
-                        if obj.row.get() == 1
-                            && geometry.screenshot_box.get_screenshot_box_sensitivity()
-                        {
-                            l += dx;
-                            r -= dx;
-                            t += dy;
-                            b -= dy;
+                    // Adjust according to which handle is being dragged
+                    match obj.col.get() {
+                        0 => l += dx, // left side
+                        1 => {
+                            // centre column – only move horizontally when the central
+                            // handle is marked as “sensitive”.
+                            if obj.row.get() == 1 {
+                                l += dx;
+                                r -= dx;
+                                t += dy;
+                                b -= dy;
+
+                                if l < 0.0 {
+                                    l = 0.0;
+                                    r += dx + geometry.left_box.get_edge_f64();
+                                }
+                                if r < 0.0 {
+                                    r = 0.0;
+                                    l -= dx - geometry.right_box.get_edge_f64();
+                                }
+
+                                if t < 0.0 {
+                                    t = 0.0;
+                                    b += dy + geometry.top_box.get_edge_f64();
+                                }
+                                if b < 0.0 {
+                                    b = 0.0;
+                                    t -= dy - geometry.bottom_box.get_edge_f64();
+                                }
+                            }
                         }
+                        2 => r -= dx, // right side
+                        _ => {}
                     }
-                    2 => r -= dx, // right side
-                    _ => {}
-                }
 
-                match obj.row.get() {
-                    0 => t += dy, // top side
-                    2 => b -= dy, // bottom side
-                    _ => {}
-                }
+                    match obj.row.get() {
+                        0 => {
+                            t += dy; // top side
+                        }
+                        2 => {
+                            b -= dy; // bottom side
+                        }
+                        _ => {}
+                    }
 
-                // avoid negative dimensions
-                if t < 0.0 || r < 0.0 || b < 0.0 || l < 0.0 {
-                    return;
-                }
+                    if l < 0.0 {
+                        l = 0.0;
+                    }
+                    if r < 0.0 {
+                        r = 0.0;
+                    }
 
-                // Apply the new geometry to the UI
-                geometry.set_new_geometry_f64(t, l, b, r);
+                    if t < 0.0 {
+                        t = 0.0;
+                    }
+                    if b < 0.0 {
+                        b = 0.0;
+                    }
+
+                    // Apply the new geometry to the UI
+                    geometry.set_new_geometry_f64(t, l, b, r);
+                }
             }
         ));
 
@@ -98,7 +130,10 @@ impl Handle {
             #[strong]
             geometry,
             move |_, _, _| {
-                geometry.toolbox.draw_toolbox(&geometry);
+                geometry
+                    .toolbox
+                    .draw_toolbox(&geometry)
+                    .expect("handle connect_drag_end error");
             }
         ));
     }

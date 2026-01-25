@@ -26,8 +26,7 @@ impl BoxNoFillButton {
             move |b| {
                 toggle_drawing(b.upcast_ref::<gtk::Widget>(), &geometry, || {
                     // Create drawable
-                    let drawable =
-                        DrawableCollection::AreaBoxes(AreaBox::new(&geometry.settings, None));
+                    let drawable = DrawableCollection::AreaBoxes(AreaBox::new(&geometry.settings));
                     geometry.drawing.create_new_drawable(&drawable);
                 });
             }

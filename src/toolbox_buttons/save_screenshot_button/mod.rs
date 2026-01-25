@@ -34,10 +34,12 @@ impl SaveScreenshotButton {
             move |_| {
                 // TODO: add year-month-day-hour-minute-seconds.png format
                 // file chooser dialog
+                // BUG: the file save dialog appears underneath
                 let dialog = gtk::FileDialog::builder()
                     .title("Save File")
                     .accept_label("Save")
                     .initial_name("capture.png")
+                    .modal(true)
                     .build();
 
                 // Create a cancellable instance
@@ -50,7 +52,7 @@ impl SaveScreenshotButton {
                 dialog.save(Some(&geometry.window), Some(&cancellable), move |file| {
                     match file {
                         Ok(file) => {
-                            std::thread::sleep(std::time::Duration::from_millis(500));
+                            // std::thread::sleep(std::time::Duration::from_millis(100));
                             // save screenshot
                             geom.save_screenshot(file);
 
@@ -62,7 +64,9 @@ impl SaveScreenshotButton {
 
                             // probably you exit the file dialog, so you want to continue
                             // editing...
-                            geom.toolbox.draw_toolbox(&geom);
+                            geom.toolbox
+                                .draw_toolbox(&geom)
+                                .expect("Savescreenshot error");
                         }
                     }
                 });

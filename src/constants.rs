@@ -1,6 +1,7 @@
 pub const APP_NAME: &str = "com.rust.rustshot-gtk";
 
 // CSS
+// pub const CSS_FILE_PATH: &str = include_str!("../styles/style.css");
 pub const CSS_FILE_PATH: &str = include_str!("../styles/mocha.css");
 pub const CSS_CLASS_TRANSPARENT: &str = "transparent";
 pub const CSS_CLASS_SOLID: &str = "fas";
@@ -14,6 +15,7 @@ pub const CSS_CLASS_TOOLBOX_BAR: &str = "transparent";
 
 pub const HANDLE_SIZE_PX: i32 = 10;
 pub const TOOLBOX_BTN_SIZE: i32 = 50;
+pub const TOOLBOX_SETTINGS_BTN_SIZE: i32 = 10;
 
 // Drawing area settings toml
 pub const DRAWING_AREA_SETTINGS_TOML: &str = concat!(

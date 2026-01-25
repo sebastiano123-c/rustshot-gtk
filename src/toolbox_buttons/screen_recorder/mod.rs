@@ -84,7 +84,9 @@ impl ScreenRecorder {
 
                                     // probably you exit the file dialog, so you want to continue
                                     // editing...
-                                    toolbox.draw_toolbox(&geometry);
+                                    toolbox
+                                        .draw_toolbox(&geometry)
+                                        .expect("ScreenRecorder error");
                                 }
                             }
                         },

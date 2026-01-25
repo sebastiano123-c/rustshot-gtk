@@ -26,7 +26,7 @@ impl ArcNoFillButton {
             move |b| {
                 toggle_drawing(b.upcast_ref::<gtk::Widget>(), &geometry, || {
                     // Create drawable
-                    let drawable = DrawableCollection::Arcs(Arc::new(&geometry.settings, None));
+                    let drawable = DrawableCollection::Arcs(Arc::new(&geometry.settings));
                     geometry.drawing.create_new_drawable(&drawable);
                 });
             }

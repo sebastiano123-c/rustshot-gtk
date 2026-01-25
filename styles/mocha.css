@@ -49,7 +49,37 @@
   background: rgba(235, 160, 172, 0.9);
 }
 
+/* Toolbox settings expander pad */
+.toolbox-settings-expander {
+  font-size: 16px;
+  font-family: Arial, "Font Awesome 6 Free", sans-serif;
+  background: @theme_bg_color;
+  border-radius: 5px 0 0 5px;
+  border-left: 1px solid black;
+  border-top: 1px solid black;
+  border-bottom: 1px solid black;
+  /* margin-left: 1px; */
+}
+
+.toolbox-settings-expander:hover {
+  background: rgba(203, 166, 247, 1);
+}
+
+/* Toolbox settings revealer pad */
+.toolbox-settings-revealer {
+  font-size: 16px;
+  font-family: Arial, "Font Awesome 6 Free", sans-serif;
+  background: @theme_bg_color;
+  border-radius: 0 5px 5px 0;
+  padding-right: 5px;
+  padding-top: 3px;
+  padding-bottom: 3px;
+  border-right: 1px solid black;
+  border-top: 1px solid black;
+  border-bottom: 1px solid black;
+}
+
 /* Pressed state */
-.pressed, .pressed-persistent {
+.pressed {
   background: rgba(203, 166, 247, 1);
 }

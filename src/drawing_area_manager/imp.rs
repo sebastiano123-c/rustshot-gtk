@@ -8,7 +8,7 @@ use std::cell::Cell;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct DrawingAreaManager {
     pub drawn_items: RefCell<Vec<DrawableCollection>>,
     pub current_item: RefCell<Option<DrawableCollection>>,

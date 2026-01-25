@@ -39,7 +39,10 @@ impl FullscreenButton {
             #[strong]
             geometry,
             move |_| {
-                geometry.toolbox.draw_toolbox(&geometry);
+                geometry
+                    .toolbox
+                    .draw_toolbox(&geometry)
+                    .expect("FullscreenButton error");
             }
         ));
     }

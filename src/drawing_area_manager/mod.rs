@@ -2,10 +2,10 @@ pub mod drawables;
 mod imp;
 
 use crate::drawing_area_manager::drawables::{
-    DragBegin, DragEnd, DragUpdate, Draw, DrawableCollection, SetRGBA,
+    DragBegin, DragEnd, DragUpdate, Draw, DrawableCollection,
 };
 
-use gtk::{cairo, glib, subclass::prelude::*};
+use gtk::{cairo, glib, pango, prelude::WidgetExt, subclass::prelude::*};
 
 glib::wrapper! {
     pub struct DrawingAreaManager(ObjectSubclass<imp::DrawingAreaManager>)
@@ -40,24 +40,26 @@ impl DrawingAreaManager {
         imp.is_drawing.set(flag)
     }
 
-    pub fn set_rgba(&self, r: f64, g: f64, b: f64, a: f64) {
-        let imp = self.imp();
-        if let Some(ref item) = *imp.current_item.borrow() {
-            item.set_rgba(r, g, b, a);
-        }
-    }
+    // pub fn set_rgba(&self, r: f64, g: f64, b: f64, a: f64) {
+    //     let imp = self.imp();
+    //     if let Some(ref item) = *imp.current_item.borrow() {
+    //         item.set_rgba(r, g, b, a);
+    //     }
+    // }
 
     fn draw_elements(&self, cr: &cairo::Context) {
         let imp = self.imp();
+        let pg: pango::Layout = self.create_pango_layout(None);
         for element in &*imp.drawn_items.borrow() {
-            element.draw_with_saved_settings(cr);
+            element.draw_with_saved_settings(cr, &pg);
         }
     }
 
     fn draw_current_element(&self, cr: &cairo::Context) {
         let imp = self.imp();
+        let pg: pango::Layout = self.create_pango_layout(None);
         if let Some(ref item) = *imp.current_item.borrow() {
-            item.draw(cr);
+            item.draw(cr, &pg);
         }
     }
 

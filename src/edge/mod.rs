@@ -17,23 +17,36 @@ impl Default for GrayEdge {
 }
 
 impl GrayEdge {
-    pub fn set(&self, edge: i32, align: Option<gtk::Align>) {
-        let imp = self.imp();
+    pub fn set_h(&self, w: i32, h_align: gtk::Align, v_align: gtk::Align) {
+        self.set_orientation(gtk::Orientation::Horizontal);
 
-        if let Some(a) = align {
-            self.set_halign(a);
-            self.set_orientation(gtk::Orientation::Horizontal);
-        } else {
-            self.set_height_request(edge);
-            self.set_orientation(gtk::Orientation::Vertical);
-            imp.orientation.set(true);
-        }
+        self.set_width_request(w);
+
+        self.set_hexpand(false);
+        self.set_vexpand(true);
+
+        self.set_halign(h_align);
+        self.set_valign(v_align);
+    }
+
+    pub fn set_v(&self, h: i32, w: i32, h_align: gtk::Align, v_align: gtk::Align) {
+        let imp = self.imp();
+        self.set_orientation(gtk::Orientation::Vertical);
+        imp.orientation.set(true);
+
+        self.set_height_request(h);
+        self.set_width_request(w);
+
+        self.set_halign(h_align);
+        self.set_valign(v_align);
+
+        self.set_hexpand(false);
+        self.set_vexpand(false);
     }
 
     pub fn get_edge(&self) -> i32 {
         let imp = self.imp();
         imp.edge.get()
-        // self.widget.width()
     }
 
     pub fn get_edge_f64(&self) -> f64 {
