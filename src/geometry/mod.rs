@@ -10,6 +10,7 @@ use crate::toolbox::Toolbox;
 use gtk::prelude::*;
 use gtk::{gdk, gio, glib};
 use rustshot_gtk::constants::CSS_CLASS_TRANSPARENT;
+use std::env;
 
 /// Stores the mutable geometry values used by the drag callbacks.
 #[derive(Clone)]
@@ -372,16 +373,24 @@ impl GeometryState {
         [x, y, w, h]
     }
 
-    pub fn take_screenshot(&self) {
-        let dim = self.get_screenshot_size();
-        let x = dim[0];
-        let y = dim[1];
-        let w = dim[2];
-        let h = dim[3];
+    /// Get the screenshot box (x, y, w, h)
+    /// x: screenshot box x position
+    /// y: screenshot box y position
+    /// w: screenshot box width
+    /// h: screenshot box height
+    fn get_grim_cmd(&self) -> String {
+        let x = self.left_box.get_edge();
+        let y = self.top_box.get_edge();
+        let w = self.full_w - x - self.right_box.get_edge();
+        let h = self.full_h - y - self.bottom_box.get_edge();
+        // format!("{},{} {}x{}", x + 1, y + 1, w, h)
+        format!("{},{} {}x{}", x, y, w, h)
+    }
 
+    pub fn take_screenshot(&self) {
         // build the grim string like "10,20 400x900"
         // we need to subtract the border of the screenbox (which is 2px, see style.css)
-        let grim_string = &format!("{},{} {}x{}", x + 1, y + 1, w, h);
+        let grim_string = &self.get_grim_cmd();
 
         // Execute the `grim` command
         let grim_output = std::process::Command::new("grim")
@@ -420,27 +429,84 @@ impl GeometryState {
         }
     }
 
-    pub fn save_screenshot(&self, file: gio::File) {
-        let dim = self.get_screenshot_size();
-        let x = dim[0];
-        let y = dim[1];
-        let w = dim[2];
-        let h = dim[3];
+    pub fn save_screenshot(&self) {
+        // Find home directory
+        match env::home_dir() {
+            Some(mut path) => {
+                path.push("Pictures");
 
-        // get filename
-        let filename = file.path().expect("Couldn't get file path");
+                // file chooser dialog
+                // TODO: add year-month-day-hour-minute-seconds.png format
+                // BUG: the file save dialog appears underneath the screenshot box in RiverWM
+                let dialog = gtk::FileDialog::builder()
+                    .title("Save File")
+                    .accept_label("Save")
+                    .initial_folder(&gio::File::for_path(path))
+                    .initial_name("capture.png")
+                    .modal(true)
+                    .build();
 
-        // build the grim string like "10,20 400x900"
-        // we need to subtract the border of the screenbox (which is 2px, see style.css)
-        let grim_string = &format!("{},{} {}x{}", x + 1, y + 1, w, h);
+                // Create a cancellable instance
+                let cancellable = gio::Cancellable::new();
 
-        // Execute the `grim` command
-        let _grim_output = std::process::Command::new("grim")
-            .arg("-g")
-            .arg(grim_string)
-            .arg(filename)
-            .output() // Execute the command
-            .expect("Failed to execute grim");
+                // Open the dialog
+                let geom = self.clone();
+
+                // clone
+                dialog.save(Some(&self.window), Some(&cancellable), move |file| {
+                    match file {
+                        Ok(file) => {
+                            // std::thread::sleep(std::time::Duration::from_millis(500));
+
+                            match file.path() {
+                                Some(file_ok) => {
+                                    // Get the wl-paste string
+                                    let wl_paste = format!(
+                                        "wl-paste -t image/png > {}",
+                                        file_ok.to_str().unwrap()
+                                    );
+
+                                    // save screenshot using wlpaste
+                                    // Execute the `grim` command
+                                    std::process::Command::new("sh")
+                                        .arg("-c")
+                                        .arg(wl_paste)
+                                        .status()
+                                        .expect("pipeline failed");
+                                }
+                                None => {
+                                    std::process::Command::new("sh")
+                                        .arg("-c")
+                                        .arg("wl-paste -t image/png > capture.png")
+                                        .status()
+                                        .expect("pipeline failed");
+                                }
+                            }
+
+                            // since everything went fine, close the application window
+                            geom.destroy();
+                        }
+                        Err(err) => {
+                            eprintln!("Error selecting file: {}", err);
+
+                            // clear wlpaste screenshot
+                            // Execute the `grim` command
+                            std::process::Command::new("wl-paste")
+                                .arg("-c")
+                                .output() // Execute the command
+                                .expect("Failed to execute grim");
+
+                            // probably you exit the file dialog, so you want to continue
+                            // editing...
+                            geom.toolbox
+                                .draw_toolbox(&geom)
+                                .expect("Savescreenshot error");
+                        }
+                    }
+                });
+            }
+            None => println!("Impossible to get home dir!"),
+        }
     }
 
     pub fn destroy(&self) {

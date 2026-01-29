@@ -1,7 +1,7 @@
 mod imp;
 
 use crate::geometry::GeometryState;
-use gtk::{gio, glib, prelude::*};
+use gtk::{glib, prelude::*};
 
 glib::wrapper! {
     pub struct SaveScreenshotButton(ObjectSubclass<imp::SaveScreenshotButton>)
@@ -32,44 +32,8 @@ impl SaveScreenshotButton {
             #[strong]
             geometry,
             move |_| {
-                // TODO: add year-month-day-hour-minute-seconds.png format
-                // file chooser dialog
-                // BUG: the file save dialog appears underneath
-                let dialog = gtk::FileDialog::builder()
-                    .title("Save File")
-                    .accept_label("Save")
-                    .initial_name("capture.png")
-                    .modal(true)
-                    .build();
-
-                // Create a cancellable instance
-                let cancellable = gio::Cancellable::new();
-
-                // Open the dialog
-                let geom = geometry.clone();
-
-                // clone
-                dialog.save(Some(&geometry.window), Some(&cancellable), move |file| {
-                    match file {
-                        Ok(file) => {
-                            // std::thread::sleep(std::time::Duration::from_millis(100));
-                            // save screenshot
-                            geom.save_screenshot(file);
-
-                            // since everything went fine, close the application window
-                            geom.destroy();
-                        }
-                        Err(err) => {
-                            eprintln!("Error selecting file: {}", err);
-
-                            // probably you exit the file dialog, so you want to continue
-                            // editing...
-                            geom.toolbox
-                                .draw_toolbox(&geom)
-                                .expect("Savescreenshot error");
-                        }
-                    }
-                });
+                geometry.take_screenshot();
+                geometry.save_screenshot();
             }
         ));
     }
