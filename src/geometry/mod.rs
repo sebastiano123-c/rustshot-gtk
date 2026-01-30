@@ -303,16 +303,16 @@ impl GeometryState {
             #[strong]
             geom,
             move |_, _, _| {
-                // Stop toolbox in order to prevent toolbox superimposition in fullscreen
-                // NOTE: some toolbox button settings will rely on this stop/start behavior
-                //       If we don't stop the toolbox and redraw it at drag_end, some items will
-                //       not be update (for example the number of number_circle)
-                geom.toolbox
-                    .draw_toolbox(&geom)
-                    .expect("Impossible to draw toolbox");
-
                 if drawing.is_drawing() {
                     drawing.drag_end();
+
+                    // Stop toolbox in order to prevent toolbox superimposition in fullscreen
+                    // NOTE: some toolbox button settings will rely on this stop/start behavior
+                    //       If we don't stop the toolbox and redraw it at drag_end, some items will
+                    //       not be update (for example the number of number_circle)
+                    geom.toolbox
+                        .draw_toolbox(&geom)
+                        .expect("Impossible to draw toolbox");
                 }
             }
         ));

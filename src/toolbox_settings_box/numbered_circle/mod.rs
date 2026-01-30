@@ -425,7 +425,7 @@ impl NumberedCircleSettingsBox {
             "starting number",
             "fas",
             number_box,
-            false,
+            true,
         );
 
         Ok(())

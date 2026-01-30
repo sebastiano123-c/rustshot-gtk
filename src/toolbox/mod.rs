@@ -381,7 +381,7 @@ impl Toolbox {
                 }
             } else {
                 // Button has no parent at all (already removed, or never added).
-                eprintln!("toolbox::stop_toolbox – settings_box had no parent widget");
+                eprintln!("Warning. toolbox::stop_toolbox – settings_box had no parent widget");
             }
         }
 
