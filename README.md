@@ -112,6 +112,8 @@ Features:
 
 For version 1.0
 
+- probably not relying on grim and use own approach
+- solve startup latency
 - create a standalone rustshot-gtk widget
 
 ## NOT SO IMPORTANT FIXES
