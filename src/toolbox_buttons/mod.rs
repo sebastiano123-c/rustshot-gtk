@@ -1,8 +1,6 @@
 pub mod arc_button;
-pub mod arc_no_fill_button;
 pub mod arrow_button;
 pub mod box_button;
-pub mod box_no_fill_button;
 pub mod copy_screenshot_button;
 pub mod freehand_button;
 pub mod fullscreen_button;

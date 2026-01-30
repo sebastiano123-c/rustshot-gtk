@@ -4,7 +4,6 @@ mod drawing_area_settings;
 mod edge;
 mod geometry;
 mod handle;
-mod rustshot_gui;
 mod screenshot_box;
 mod spin_button;
 mod toolbox;
