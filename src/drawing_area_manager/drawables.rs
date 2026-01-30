@@ -376,7 +376,7 @@ impl DragEnd for NumberedCircle {
             .numbered_circle
             .get_value("number")
             .get_i32()
-            .expect("drg_edn error")
+            .expect("drag_end error")
             + 1_i32;
         self.settings
             .numbered_circle

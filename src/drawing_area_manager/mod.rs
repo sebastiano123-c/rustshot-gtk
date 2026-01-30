@@ -40,13 +40,6 @@ impl DrawingAreaManager {
         imp.is_drawing.set(flag)
     }
 
-    // pub fn set_rgba(&self, r: f64, g: f64, b: f64, a: f64) {
-    //     let imp = self.imp();
-    //     if let Some(ref item) = *imp.current_item.borrow() {
-    //         item.set_rgba(r, g, b, a);
-    //     }
-    // }
-
     fn draw_elements(&self, cr: &cairo::Context) {
         let imp = self.imp();
         let pg: pango::Layout = self.create_pango_layout(None);
