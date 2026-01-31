@@ -4,6 +4,7 @@ pub mod box_button;
 pub mod copy_screenshot_button;
 pub mod freehand_button;
 pub mod fullscreen_button;
+pub mod input_text_button;
 pub mod line_button;
 pub mod numbered_circle_button;
 pub mod save_screenshot_button;
@@ -69,6 +70,8 @@ pub enum ToolboxButton {
     Freehand(freehand_button::FreehandButton),
     // Numbered circles
     NumberedCircles(numbered_circle_button::NumberedCircleButton),
+    // Input Texts
+    InputTexts(input_text_button::InputTextButton),
     // Fullscreen
     Fullscreen(fullscreen_button::FullscreenButton),
     // Take screenshot
@@ -97,6 +100,7 @@ impl AsRef<gtk::Widget> for ToolboxButton {
             ToolboxButton::Line(btn) => btn.as_ref(),
             ToolboxButton::Freehand(btn) => btn.as_ref(),
             ToolboxButton::NumberedCircles(btn) => btn.as_ref(),
+            ToolboxButton::InputTexts(btn) => btn.as_ref(),
             ToolboxButton::Fullscreen(btn) => btn.as_ref(),
             ToolboxButton::TakeScreenshot(btn) => btn.as_ref(),
             ToolboxButton::SaveScreenshot(btn) => btn.as_ref(),

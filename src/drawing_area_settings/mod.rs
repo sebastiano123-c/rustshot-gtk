@@ -91,9 +91,10 @@ pub struct Settings {
     pub arc: ArcSettings,
     pub rect: RectSettings,
     pub line: LineSettings,
+    pub arrow: ArrowSettings,
     pub freehand: FreehandSettings,
     pub numbered_circle: NumberedCircleSettings,
-    pub arrow: ArrowSettings,
+    pub input_text: InputTextSettings,
 }
 
 #[derive(Default, Deserialize, Serialize, Clone)]
@@ -327,7 +328,65 @@ impl NumberedCircleSettings {
     }
 }
 
+#[derive(Default, Deserialize, Serialize, Clone)]
+pub struct InputTextSettings {
+    fill: bool,
+    fill_r: f64,
+    fill_g: f64,
+    fill_b: f64,
+    fill_a: f64,
+    border: bool,
+    border_size: f64,
+    border_r: f64,
+    border_g: f64,
+    border_b: f64,
+    border_a: f64,
+    text: String,
+    font_size: f64,
+    font_face: String,
+    font_weight: String,
+    font_slant: String,
+    font_r: f64,
+    font_g: f64,
+    font_b: f64,
+    font_a: f64,
+}
+
+impl InputTextSettings {
+    /// Get a setting by name, returning a `SettingValue`.
+    pub fn get_value(&self, setting_name: &str) -> SettingValue {
+        match setting_name {
+            "fill" => SettingValue::Bool(self.fill),
+            "fill_r" => SettingValue::F64(self.fill_r),
+            "fill_g" => SettingValue::F64(self.fill_g),
+            "fill_b" => SettingValue::F64(self.fill_b),
+            "fill_a" => SettingValue::F64(self.fill_a),
+            "border" => SettingValue::Bool(self.border),
+            "border_size" => SettingValue::F64(self.border_size),
+            "border_r" => SettingValue::F64(self.border_r),
+            "border_g" => SettingValue::F64(self.border_g),
+            "border_b" => SettingValue::F64(self.border_b),
+            "border_a" => SettingValue::F64(self.border_a),
+            "text" => SettingValue::String(self.text.clone()),
+            "font_size" => SettingValue::F64(self.font_size),
+            "font_face" => SettingValue::String(self.font_face.clone()),
+            "font_weight" => SettingValue::String(self.font_weight.clone()),
+            "font_slant" => SettingValue::String(self.font_slant.clone()),
+            "font_r" => SettingValue::F64(self.font_r),
+            "font_g" => SettingValue::F64(self.font_g),
+            "font_b" => SettingValue::F64(self.font_b),
+            "font_a" => SettingValue::F64(self.font_a),
+            other => {
+                eprintln!("NumberedCircleSettings::get_value: unknown key '{}'", other);
+                // Default – you can change this to whatever makes sense.
+                SettingValue::Bool(false)
+            }
+        }
+    }
+}
+
 // Top level struct to hold the TOML data.
+
 #[derive(Default, Clone)]
 pub struct SettingsRc {
     pub arc: ArcSettingsRc,
@@ -336,6 +395,7 @@ pub struct SettingsRc {
     pub arrow: ArrowSettingsRc,
     pub freehand: FreehandSettingsRc,
     pub numbered_circle: NumberedCircleSettingsRc,
+    pub input_text: InputTextSettingsRc,
 }
 
 #[derive(Default, Clone)]
@@ -909,6 +969,164 @@ impl NumberedCircleSettingsRc {
         }
     }
 }
+
+#[derive(Default, Clone)]
+pub struct InputTextSettingsRc {
+    fill: Rc<Cell<bool>>,
+    fill_r: Rc<Cell<f64>>,
+    fill_g: Rc<Cell<f64>>,
+    fill_b: Rc<Cell<f64>>,
+    fill_a: Rc<Cell<f64>>,
+    border: Rc<Cell<bool>>,
+    border_size: Rc<Cell<f64>>,
+    border_r: Rc<Cell<f64>>,
+    border_g: Rc<Cell<f64>>,
+    border_b: Rc<Cell<f64>>,
+    border_a: Rc<Cell<f64>>,
+    text: Rc<RefCell<String>>,
+    font_size: Rc<Cell<f64>>,
+    font_face: Rc<RefCell<String>>,
+    font_weight: Rc<RefCell<String>>,
+    font_slant: Rc<RefCell<String>>,
+    font_r: Rc<Cell<f64>>,
+    font_g: Rc<Cell<f64>>,
+    font_b: Rc<Cell<f64>>,
+    font_a: Rc<Cell<f64>>,
+}
+
+impl InputTextSettingsRc {
+    /// Get a setting by name, returning a `SettingValue`.
+    pub fn get_value(&self, setting_name: &str) -> SettingValue {
+        match setting_name {
+            "fill" => SettingValue::Bool(self.fill.get()),
+            "fill_r" => SettingValue::F64(self.fill_r.get()),
+            "fill_g" => SettingValue::F64(self.fill_g.get()),
+            "fill_b" => SettingValue::F64(self.fill_b.get()),
+            "fill_a" => SettingValue::F64(self.fill_a.get()),
+            "border" => SettingValue::Bool(self.border.get()),
+            "border_size" => SettingValue::F64(self.border_size.get()),
+            "border_r" => SettingValue::F64(self.border_r.get()),
+            "border_g" => SettingValue::F64(self.border_g.get()),
+            "border_b" => SettingValue::F64(self.border_b.get()),
+            "border_a" => SettingValue::F64(self.border_a.get()),
+            "text" => SettingValue::String(self.text.borrow().clone()),
+            "font_size" => SettingValue::F64(self.font_size.get()),
+            "font_face" => SettingValue::String(self.font_face.borrow().clone()),
+            "font_weight" => SettingValue::String(self.font_weight.borrow().clone()),
+            "font_slant" => SettingValue::String(self.font_slant.borrow().clone()),
+            "font_r" => SettingValue::F64(self.font_r.get()),
+            "font_g" => SettingValue::F64(self.font_g.get()),
+            "font_b" => SettingValue::F64(self.font_b.get()),
+            "font_a" => SettingValue::F64(self.font_a.get()),
+            other => {
+                eprintln!("NumberedCircleSettings::get_value: unknown key '{}'", other);
+                // Default – you can change this to whatever makes sense.
+                SettingValue::Bool(false)
+            }
+        }
+    }
+    /// Set a setting by name, returning a `SettingValue`.
+    pub fn set_value(&self, setting_name: &str, value: SettingValue) -> std::io::Result<()> {
+        match (setting_name, value) {
+            // ---- fill -------------------------------------------------------
+            ("fill", SettingValue::Bool(v)) => {
+                self.fill.set(v);
+                Ok(())
+            }
+            ("fill_r", SettingValue::F64(v)) => {
+                self.fill_r.set(v);
+                Ok(())
+            }
+            ("fill_g", SettingValue::F64(v)) => {
+                self.fill_g.set(v);
+                Ok(())
+            }
+            ("fill_b", SettingValue::F64(v)) => {
+                self.fill_b.set(v);
+                Ok(())
+            }
+            ("fill_a", SettingValue::F64(v)) => {
+                self.fill_a.set(v);
+                Ok(())
+            }
+
+            // ---- border -----------------------------------------------------
+            ("border", SettingValue::Bool(v)) => {
+                self.border.set(v);
+                Ok(())
+            }
+            ("border_size", SettingValue::F64(v)) => {
+                self.border_size.set(v);
+                Ok(())
+            }
+            ("border_r", SettingValue::F64(v)) => {
+                self.border_r.set(v);
+                Ok(())
+            }
+            ("border_g", SettingValue::F64(v)) => {
+                self.border_g.set(v);
+                Ok(())
+            }
+            ("border_b", SettingValue::F64(v)) => {
+                self.border_b.set(v);
+                Ok(())
+            }
+            ("border_a", SettingValue::F64(v)) => {
+                self.border_a.set(v);
+                Ok(())
+            }
+
+            // ---- text -----------------------------------------------------
+            ("text", SettingValue::String(v)) => {
+                *self.text.borrow_mut() = v;
+                Ok(())
+            }
+
+            // ---- font -----------------------------------------------------
+            ("font_size", SettingValue::F64(v)) => {
+                self.font_size.set(v);
+                Ok(())
+            }
+            ("font_face", SettingValue::String(v)) => {
+                *self.font_face.borrow_mut() = v;
+                Ok(())
+            }
+            ("font_weight", SettingValue::String(v)) => {
+                *self.font_weight.borrow_mut() = v;
+                Ok(())
+            }
+            ("font_slant", SettingValue::String(v)) => {
+                *self.font_slant.borrow_mut() = v;
+                Ok(())
+            }
+            ("font_r", SettingValue::F64(v)) => {
+                self.font_r.set(v);
+                Ok(())
+            }
+            ("font_g", SettingValue::F64(v)) => {
+                self.font_g.set(v);
+                Ok(())
+            }
+            ("font_b", SettingValue::F64(v)) => {
+                self.font_b.set(v);
+                Ok(())
+            }
+            ("font_a", SettingValue::F64(v)) => {
+                self.font_a.set(v);
+                Ok(())
+            }
+
+            // ---- mismatched type -------------------------------------------------
+            (key, _wrong_type) => Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                format!("NumberedCircleSettings::get_value: unknown key '{}'", key),
+            )),
+        }
+    }
+}
+
+// Settings structures
+
 impl SettingsRc {
     pub fn new() -> Self {
         let raw = Settings::new();
@@ -994,6 +1212,29 @@ impl SettingsRc {
             radius: Rc::new(Cell::new(raw.numbered_circle.radius)),
         };
 
+        let input_text_rc = InputTextSettingsRc {
+            fill: Rc::new(Cell::new(raw.input_text.fill)),
+            fill_r: Rc::new(Cell::new(raw.input_text.fill_r)),
+            fill_g: Rc::new(Cell::new(raw.input_text.fill_g)),
+            fill_b: Rc::new(Cell::new(raw.input_text.fill_b)),
+            fill_a: Rc::new(Cell::new(raw.input_text.fill_a)),
+            border: Rc::new(Cell::new(raw.input_text.border)),
+            border_size: Rc::new(Cell::new(raw.input_text.border_size)),
+            border_r: Rc::new(Cell::new(raw.input_text.border_r)),
+            border_g: Rc::new(Cell::new(raw.input_text.border_g)),
+            border_b: Rc::new(Cell::new(raw.input_text.border_b)),
+            border_a: Rc::new(Cell::new(raw.input_text.border_a)),
+            text: Rc::new(RefCell::new(raw.input_text.text)),
+            font_size: Rc::new(Cell::new(raw.input_text.font_size)),
+            font_face: Rc::new(RefCell::new(raw.input_text.font_face)),
+            font_weight: Rc::new(RefCell::new(raw.input_text.font_weight)),
+            font_slant: Rc::new(RefCell::new(raw.input_text.font_slant)),
+            font_r: Rc::new(Cell::new(raw.input_text.font_r)),
+            font_g: Rc::new(Cell::new(raw.input_text.font_g)),
+            font_b: Rc::new(Cell::new(raw.input_text.font_b)),
+            font_a: Rc::new(Cell::new(raw.input_text.font_a)),
+        };
+
         SettingsRc {
             arc: arc_rc,
             rect: rect_rc,
@@ -1001,6 +1242,7 @@ impl SettingsRc {
             arrow: arrow_rc,
             freehand: freehand_rc,
             numbered_circle: numbered_circle_rc,
+            input_text: input_text_rc,
         }
     }
 
@@ -1087,6 +1329,29 @@ impl SettingsRc {
             radius: self.numbered_circle.radius.get(),
         };
 
+        let it: InputTextSettings = InputTextSettings {
+            fill: self.input_text.fill.get(),
+            fill_r: self.input_text.fill_r.get(),
+            fill_g: self.input_text.fill_g.get(),
+            fill_b: self.input_text.fill_b.get(),
+            fill_a: self.input_text.fill_a.get(),
+            border: self.input_text.border.get(),
+            border_size: self.input_text.border_size.get(),
+            border_r: self.input_text.border_r.get(),
+            border_g: self.input_text.border_g.get(),
+            border_b: self.input_text.border_b.get(),
+            border_a: self.input_text.border_a.get(),
+            text: self.input_text.text.borrow().clone(),
+            font_size: self.input_text.font_size.get(),
+            font_face: self.input_text.font_face.borrow().clone(),
+            font_weight: self.input_text.font_weight.borrow().clone(),
+            font_slant: self.input_text.font_slant.borrow().clone(),
+            font_r: self.input_text.font_r.get(),
+            font_g: self.input_text.font_g.get(),
+            font_b: self.input_text.font_b.get(),
+            font_a: self.input_text.font_a.get(),
+        };
+
         Settings {
             arc: ar,
             rect: re,
@@ -1094,6 +1359,7 @@ impl SettingsRc {
             arrow: aw,
             freehand: fh,
             numbered_circle: nc,
+            input_text: it,
         }
     }
 }
@@ -1113,6 +1379,7 @@ impl Settings {
             arrow: data.arrow,
             freehand: data.freehand,
             numbered_circle: data.numbered_circle,
+            input_text: data.input_text,
         }
     }
 

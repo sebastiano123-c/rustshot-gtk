@@ -87,6 +87,11 @@ impl Toolbox {
         btn.attach_gesture(geom);
         self.add_widget_to_btn_list(ToolboxButton::NumberedCircles(btn))?;
 
+        // Numbered circles
+        let btn = input_text_button::InputTextButton::default();
+        btn.attach_gesture(geom);
+        self.add_widget_to_btn_list(ToolboxButton::InputTexts(btn))?;
+
         // Fullscreen
         let btn = fullscreen_button::FullscreenButton::default();
         btn.attach_gesture(geom);

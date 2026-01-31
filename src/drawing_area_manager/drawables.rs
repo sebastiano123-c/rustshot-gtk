@@ -1,9 +1,22 @@
+use crate::drawing_area_settings::SettingValue;
 use crate::drawing_area_settings::{Settings, SettingsRc};
 use core::f64;
 use gtk::cairo;
 use std::cell::Cell;
 use std::cell::RefCell;
 use std::rc::Rc;
+
+#[derive(Clone)]
+pub struct InputText {
+    pub x0: Rc<Cell<f64>>,
+    pub y0: Rc<Cell<f64>>,
+    pub x: Rc<Cell<f64>>,
+    pub y: Rc<Cell<f64>>,
+    pub text: Rc<RefCell<String>>,
+    pub settings: SettingsRc,
+    pub saved_settings: Rc<RefCell<Option<Settings>>>,
+    pub drawing: Rc<Cell<bool>>,
+}
 
 #[derive(Clone)]
 pub struct NumberedCircle {
@@ -71,6 +84,7 @@ pub struct AreaBox {
 
 #[derive(Clone)]
 pub enum DrawableCollection {
+    InputTexts(InputText),
     NumberedCircles(NumberedCircle),
     FreeHands(FreeHandDraw),
     Lines(Line),
@@ -175,6 +189,23 @@ impl Arc {
         self.drawing.get()
     }
 }
+impl InputText {
+    pub fn new(settings_rc: &SettingsRc) -> Self {
+        Self {
+            x0: Rc::new(Cell::new(0.0)),
+            y0: Rc::new(Cell::new(0.0)),
+            x: Rc::new(Cell::new(0.0)),
+            y: Rc::new(Cell::new(0.0)),
+            text: Rc::new(RefCell::new("".to_string())),
+            settings: settings_rc.clone(),
+            saved_settings: Rc::new(RefCell::new(None)),
+            drawing: Rc::new(Cell::new(false)),
+        }
+    }
+    pub fn is_drawing(&self) -> bool {
+        self.drawing.get()
+    }
+}
 
 // Drag Begin trait
 pub trait DragBegin {
@@ -228,6 +259,29 @@ impl DragBegin for NumberedCircle {
         self.y0.set(y);
     }
 }
+impl DragBegin for InputText {
+    fn drag_begin(&self, x: f64, y: f64) {
+        // Set the initial position
+        self.x0.set(x);
+        self.y0.set(y);
+
+        // Se the initial height and width
+        let sz = self
+            .settings
+            .input_text
+            .get_value("font_size")
+            .get_f64()
+            .expect("");
+        self.x.set(30.0);
+        self.y.set(sz);
+
+        // Every time there is a drag_begin reset the settings text
+        self.settings
+            .input_text
+            .set_value("text", SettingValue::String("".to_string()))
+            .expect("Error in stop_controller_key");
+    }
+}
 impl DragBegin for DrawableCollection {
     fn drag_begin(&self, x: f64, y: f64) {
         match self {
@@ -247,6 +301,9 @@ impl DragBegin for DrawableCollection {
                 state.drag_begin(x, y);
             }
             DrawableCollection::NumberedCircles(state) => {
+                state.drag_begin(x, y);
+            }
+            DrawableCollection::InputTexts(state) => {
                 state.drag_begin(x, y);
             }
         }
@@ -287,6 +344,12 @@ impl DragUpdate for FreeHandDraw {
         self.y.borrow_mut().push(self.y0.get() + y);
     }
 }
+impl DragUpdate for InputText {
+    fn drag_update(&self, _x: f64, _y: f64) {
+        // self.x.set(x);
+        // self.y.set(y);
+    }
+}
 impl DragUpdate for DrawableCollection {
     fn drag_update(&self, x: f64, y: f64) {
         match self {
@@ -305,6 +368,9 @@ impl DragUpdate for DrawableCollection {
             DrawableCollection::Arrows(state) => {
                 state.drag_update(x, y);
             }
+            DrawableCollection::InputTexts(state) => {
+                state.drag_update(x, y);
+            }
             _ => {}
         }
     }
@@ -312,63 +378,63 @@ impl DragUpdate for DrawableCollection {
 
 // Drag End
 pub trait DragEnd {
-    fn drag_end(&self) -> DrawableCollection;
+    fn drag_end(&self) -> Option<DrawableCollection>;
 }
 
 impl DragEnd for AreaBox {
-    fn drag_end(&self) -> DrawableCollection {
+    fn drag_end(&self) -> Option<DrawableCollection> {
         // Create an hard copy of the settings for future draws
         *self.saved_settings.borrow_mut() = Some(self.settings.hard_copy());
 
         // Shallow clone last settings and return the new element
         let s = self.settings.clone();
-        DrawableCollection::AreaBoxes(AreaBox::new(&s))
+        Some(DrawableCollection::AreaBoxes(AreaBox::new(&s)))
     }
 }
 impl DragEnd for Arc {
-    fn drag_end(&self) -> DrawableCollection {
+    fn drag_end(&self) -> Option<DrawableCollection> {
         // Create an hard copy of the settings for future draws
         *self.saved_settings.borrow_mut() = Some(self.settings.hard_copy());
 
         // Shallow clone last settings and return the new element
         let s = self.settings.clone();
-        DrawableCollection::Arcs(Arc::new(&s))
+        Some(DrawableCollection::Arcs(Arc::new(&s)))
     }
 }
 impl DragEnd for Line {
-    fn drag_end(&self) -> DrawableCollection {
+    fn drag_end(&self) -> Option<DrawableCollection> {
         // Create an hard copy of the settings for future draws
         *self.saved_settings.borrow_mut() = Some(self.settings.hard_copy());
 
         // Shallow clone last settings and return the new element
         let s = self.settings.clone();
-        DrawableCollection::Lines(Line::new(&s))
+        Some(DrawableCollection::Lines(Line::new(&s)))
     }
 }
 impl DragEnd for Arrow {
-    fn drag_end(&self) -> DrawableCollection {
+    fn drag_end(&self) -> Option<DrawableCollection> {
         // Create an hard copy of the settings for future draws
         *self.saved_settings.borrow_mut() = Some(self.settings.hard_copy());
 
         // Shallow clone last settings and return the new element
         let s = self.settings.clone();
-        DrawableCollection::Arrows(Arrow::new(&s))
+        Some(DrawableCollection::Arrows(Arrow::new(&s)))
     }
 }
 impl DragEnd for FreeHandDraw {
-    fn drag_end(&self) -> DrawableCollection {
+    fn drag_end(&self) -> Option<DrawableCollection> {
         // Create an hard copy of the settings for future draws
         *self.saved_settings.borrow_mut() = Some(self.settings.hard_copy());
 
         // Shallow clone last settings and return the new element
         let s = self.settings.clone();
-        DrawableCollection::FreeHands(FreeHandDraw::new(&s))
+        Some(DrawableCollection::FreeHands(FreeHandDraw::new(&s)))
     }
 }
 impl DragEnd for NumberedCircle {
-    fn drag_end(&self) -> DrawableCollection {
-        // Create an hard copy of the settings for future draws
-        *self.saved_settings.borrow_mut() = Some(self.settings.hard_copy());
+    fn drag_end(&self) -> Option<DrawableCollection> {
+        // // Create an hard copy of the settings for future draws
+        // *self.saved_settings.borrow_mut() = Some(self.settings.hard_copy());
 
         // Set new value
         let num: i32 = self
@@ -388,11 +454,21 @@ impl DragEnd for NumberedCircle {
 
         // Shallow clone last settings and return the new element
         let s = self.settings.clone();
-        DrawableCollection::NumberedCircles(NumberedCircle::new(&s))
+        Some(DrawableCollection::NumberedCircles(NumberedCircle::new(&s)))
+    }
+}
+impl DragEnd for InputText {
+    fn drag_end(&self) -> Option<DrawableCollection> {
+        // Create an hard copy of the settings for future draws
+        *self.saved_settings.borrow_mut() = Some(self.settings.hard_copy());
+
+        // Shallow clone last settings and return the new element
+        let s = self.settings.clone();
+        Some(DrawableCollection::InputTexts(InputText::new(&s)))
     }
 }
 impl DragEnd for DrawableCollection {
-    fn drag_end(&self) -> DrawableCollection {
+    fn drag_end(&self) -> Option<DrawableCollection> {
         match self {
             DrawableCollection::AreaBoxes(state) => state.drag_end(),
             DrawableCollection::Arcs(state) => state.drag_end(),
@@ -400,6 +476,96 @@ impl DragEnd for DrawableCollection {
             DrawableCollection::Arrows(state) => state.drag_end(),
             DrawableCollection::FreeHands(state) => state.drag_end(),
             DrawableCollection::NumberedCircles(state) => state.drag_end(),
+            DrawableCollection::InputTexts(state) => state.drag_end(),
+        }
+    }
+}
+
+// ControllerKey
+pub trait ControllerKey {
+    fn event_controller_key(&self);
+    fn stop_controller_key(&self) -> Option<DrawableCollection>;
+}
+
+impl ControllerKey for AreaBox {
+    fn event_controller_key(&self) {}
+    fn stop_controller_key(&self) -> Option<DrawableCollection> {
+        None
+    }
+}
+impl ControllerKey for Arc {
+    fn event_controller_key(&self) {}
+    fn stop_controller_key(&self) -> Option<DrawableCollection> {
+        None
+    }
+}
+impl ControllerKey for Line {
+    fn event_controller_key(&self) {}
+    fn stop_controller_key(&self) -> Option<DrawableCollection> {
+        None
+    }
+}
+impl ControllerKey for Arrow {
+    fn event_controller_key(&self) {}
+    fn stop_controller_key(&self) -> Option<DrawableCollection> {
+        None
+    }
+}
+impl ControllerKey for FreeHandDraw {
+    fn event_controller_key(&self) {}
+    fn stop_controller_key(&self) -> Option<DrawableCollection> {
+        None
+    }
+}
+impl ControllerKey for NumberedCircle {
+    fn event_controller_key(&self) {}
+    fn stop_controller_key(&self) -> Option<DrawableCollection> {
+        None
+    }
+}
+impl ControllerKey for InputText {
+    fn event_controller_key(&self) {
+        let num = self
+            .settings
+            .input_text
+            .get_value("text")
+            .get_string()
+            .expect("InputText::new error");
+        let text = num.to_string();
+
+        *self.text.borrow_mut() = text;
+    }
+    fn stop_controller_key(&self) -> Option<DrawableCollection> {
+        // Create an hard copy of the settings for future draws
+        *self.saved_settings.borrow_mut() = Some(self.settings.hard_copy());
+
+        // Shallow clone last settings and return the new element
+        let s = self.settings.clone();
+
+        Some(DrawableCollection::InputTexts(InputText::new(&s)))
+    }
+}
+impl ControllerKey for DrawableCollection {
+    fn event_controller_key(&self) {
+        match self {
+            DrawableCollection::AreaBoxes(state) => state.event_controller_key(),
+            DrawableCollection::Arcs(state) => state.event_controller_key(),
+            DrawableCollection::Lines(state) => state.event_controller_key(),
+            DrawableCollection::Arrows(state) => state.event_controller_key(),
+            DrawableCollection::FreeHands(state) => state.event_controller_key(),
+            DrawableCollection::NumberedCircles(state) => state.event_controller_key(),
+            DrawableCollection::InputTexts(state) => state.event_controller_key(),
+        };
+    }
+    fn stop_controller_key(&self) -> Option<DrawableCollection> {
+        match self {
+            DrawableCollection::AreaBoxes(state) => state.stop_controller_key(),
+            DrawableCollection::Arcs(state) => state.stop_controller_key(),
+            DrawableCollection::Lines(state) => state.stop_controller_key(),
+            DrawableCollection::Arrows(state) => state.stop_controller_key(),
+            DrawableCollection::FreeHands(state) => state.stop_controller_key(),
+            DrawableCollection::NumberedCircles(state) => state.stop_controller_key(),
+            DrawableCollection::InputTexts(state) => state.stop_controller_key(),
         }
     }
 }
@@ -1315,6 +1481,187 @@ impl Draw for NumberedCircle {
         }
     }
 }
+impl Draw for InputText {
+    fn draw(&self, cr: &cairo::Context, pg: &gtk::pango::Layout) {
+        let settings = self.settings.input_text.clone();
+
+        // Draw text in the center of the rectangle
+        let text = self.text.borrow().clone();
+        pg.set_text(&text);
+
+        // Get logical extents (in Pango units) and convert to device units.
+        let (_ink_rect, logical_rect) = pg.extents();
+        let text_width = logical_rect.width() as f64 / gtk::pango::SCALE as f64;
+        let text_height = logical_rect.height() as f64 / gtk::pango::SCALE as f64;
+
+        // Font face
+        let font_face = settings
+            .get_value("font_face")
+            .get_string()
+            .expect("InputText font_face error");
+        let fd: gtk::pango::FontDescription =
+            gtk::pango::FontDescription::from_string(font_face.as_str());
+        pg.set_font_description(Some(&fd));
+
+        // Position so the text is centred on (x0, y0).
+        let text_x = self.x0.get(); // - text_width / 2.0;
+        let text_y = self.y0.get(); // - text_height / 2.0;
+
+        // Fill
+        if settings.get_value("fill").get_bool().expect("draw error") {
+            cr.rectangle(self.x0.get(), self.y0.get(), text_width, text_height);
+
+            cr.set_source_rgba(
+                settings.get_value("fill_r").get_f64().expect("draw error"),
+                settings.get_value("fill_g").get_f64().expect("draw error"),
+                settings.get_value("fill_b").get_f64().expect("draw error"),
+                settings.get_value("fill_a").get_f64().expect("draw error"),
+            );
+            cr.fill().expect("No arc fill to unwrap");
+            cr.stroke().unwrap();
+        }
+
+        // Border
+        if settings.get_value("border").get_bool().expect("draw error") {
+            cr.rectangle(self.x0.get(), self.y0.get(), text_width, text_height);
+
+            cr.set_source_rgba(
+                settings
+                    .get_value("border_r")
+                    .get_f64()
+                    .expect("draw error"),
+                settings
+                    .get_value("border_g")
+                    .get_f64()
+                    .expect("draw error"),
+                settings
+                    .get_value("border_b")
+                    .get_f64()
+                    .expect("draw error"),
+                settings
+                    .get_value("border_a")
+                    .get_f64()
+                    .expect("draw error"),
+            );
+            let border_size = settings
+                .get_value("border_size")
+                .get_f64()
+                .expect("draw error");
+            cr.set_line_width(border_size);
+            cr.stroke().unwrap();
+        }
+
+        // Set text properties
+        cr.set_source_rgba(
+            settings.get_value("font_r").get_f64().expect("error"),
+            settings.get_value("font_g").get_f64().expect("error"),
+            settings.get_value("font_b").get_f64().expect("error"),
+            settings.get_value("font_a").get_f64().expect("error"),
+        );
+
+        // Move the Cairo cursor (not strictly required for pangocairo, but keeps
+        // the state tidy) and render the layout.
+        cr.move_to(text_x, text_y);
+        pangocairo::functions::show_layout(cr, pg);
+        cr.stroke().expect("Failed to stroke the text");
+    }
+    fn draw_with_saved_settings(&self, cr: &cairo::Context, pg: &gtk::pango::Layout) {
+        println!("draw saved");
+        let settings_hard_copy = self.saved_settings.borrow().clone();
+        if let Some(settings_to_unwrap) = settings_hard_copy {
+            let settings = settings_to_unwrap.input_text;
+
+            // Draw text in the center of the rectangle
+            let text = self.text.borrow().clone();
+            pg.set_text(&text);
+
+            // Get logical extents (in Pango units) and convert to device units.
+            let (_ink_rect, logical_rect) = pg.extents();
+            let text_width = logical_rect.width() as f64 / gtk::pango::SCALE as f64;
+            let text_height = logical_rect.height() as f64 / gtk::pango::SCALE as f64;
+
+            // Font face
+            let font_face = settings
+                .get_value("font_face")
+                .get_string()
+                .expect("InputText font_face error");
+            let fd: gtk::pango::FontDescription =
+                gtk::pango::FontDescription::from_string(font_face.as_str());
+            pg.set_font_description(Some(&fd));
+
+            // Position so the text is centred on (x0, y0).
+            let text_x = self.x0.get(); // - text_width / 2.0;
+            let text_y = self.y0.get(); // - text_height / 2.0;
+
+            // Fill
+            if settings.get_value("fill").get_bool().expect("draw error") {
+                cr.rectangle(self.x0.get(), self.y0.get(), text_width, text_height);
+
+                cr.set_source_rgba(
+                    settings.get_value("fill_r").get_f64().expect("draw error"),
+                    settings.get_value("fill_g").get_f64().expect("draw error"),
+                    settings.get_value("fill_b").get_f64().expect("draw error"),
+                    settings.get_value("fill_a").get_f64().expect("draw error"),
+                );
+                cr.fill().expect("No arc fill to unwrap");
+                cr.stroke().unwrap();
+            }
+
+            if settings.get_value("border").get_bool().expect("draw error") {
+                cr.rectangle(self.x0.get(), self.y0.get(), text_width, text_height);
+
+                cr.set_source_rgba(
+                    settings
+                        .get_value("border_r")
+                        .get_f64()
+                        .expect("draw error"),
+                    settings
+                        .get_value("border_g")
+                        .get_f64()
+                        .expect("draw error"),
+                    settings
+                        .get_value("border_b")
+                        .get_f64()
+                        .expect("draw error"),
+                    settings
+                        .get_value("border_a")
+                        .get_f64()
+                        .expect("draw error"),
+                );
+                let border_size = settings
+                    .get_value("border_size")
+                    .get_f64()
+                    .expect("draw error");
+                cr.set_line_width(border_size);
+                cr.stroke().unwrap();
+            }
+
+            // Set text properties
+            cr.set_source_rgba(
+                settings.get_value("font_r").get_f64().expect("error"),
+                settings.get_value("font_g").get_f64().expect("error"),
+                settings.get_value("font_b").get_f64().expect("error"),
+                settings.get_value("font_a").get_f64().expect("error"),
+            );
+            // Font face
+            let font_face = settings
+                .get_value("font_face")
+                .get_string()
+                .expect("NumberedCircle font_face error");
+            let fd: gtk::pango::FontDescription =
+                gtk::pango::FontDescription::from_string(font_face.as_str());
+            pg.set_font_description(Some(&fd));
+
+            // Move the Cairo cursor (not strictly required for pangocairo, but keeps
+            // the state tidy) and render the layout.
+            cr.move_to(text_x, text_y);
+            pangocairo::functions::show_layout(cr, pg);
+            cr.stroke().expect("Failed to stroke the text");
+        } else {
+            println!("Warning! saved_settings is None!");
+        }
+    }
+}
 impl Draw for DrawableCollection {
     fn draw(&self, cr: &cairo::Context, pg: &gtk::pango::Layout) {
         match self {
@@ -1334,6 +1681,9 @@ impl Draw for DrawableCollection {
                 state.draw(cr, pg);
             }
             DrawableCollection::NumberedCircles(state) => {
+                state.draw(cr, pg);
+            }
+            DrawableCollection::InputTexts(state) => {
                 state.draw(cr, pg);
             }
         }
@@ -1357,6 +1707,9 @@ impl Draw for DrawableCollection {
             }
             DrawableCollection::NumberedCircles(state) => {
                 state.draw_with_saved_settings(cr, pg);
+            }
+            DrawableCollection::InputTexts(state) => {
+                state.draw(cr, pg);
             }
         }
     }

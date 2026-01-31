@@ -1,4 +1,5 @@
 use crate::drawing_area_manager::DrawingAreaManager;
+use crate::drawing_area_settings::SettingValue;
 use crate::edge::GrayEdge;
 use rustshot_gtk::constants::{CSS_CLASS_PRESSED, CSS_FILE_PATH};
 use std::io::Write;
@@ -190,6 +191,7 @@ impl GeometryState {
         let layout = self.layout.clone();
 
         // drawing area
+        self.drawing.set_focusable(true);
         let drawing = self.drawing.clone();
 
         ////////////////////////////////////////////////
@@ -197,24 +199,11 @@ impl GeometryState {
         ////////////////////////////////////////////////
         let keyboard_ctrl = gtk::EventControllerKey::new();
         geom.window.add_controller(keyboard_ctrl.clone());
-        keyboard_ctrl.connect_key_pressed(glib::clone!(
+        keyboard_ctrl.connect_key_released(glib::clone!(
             #[strong]
             geom,
-            move |_, _keyval, keycode, _state| {
-                // if 'esc' is pressed
-                if keycode == 9 {
-                    if geom.toolbox.is_button_pressed() {
-                        geom.screenshot_box.set_screenshot_box_sensitivity(true);
-                        geom.drawing.set_drawing(false);
-                        geom.toolbox.set_button_pressed(false);
-                        geom.toolbox.remove_css_class(CSS_CLASS_PRESSED);
-                    } else {
-                        // finally we need to destroy the windows objects
-                        geom.window.destroy();
-                        return glib::signal::Propagation::Stop;
-                    }
-                }
-                glib::signal::Propagation::Proceed
+            move |_, key, _keycode, _state| {
+                geom.handle_key_event(key);
             }
         ));
 
@@ -300,6 +289,8 @@ impl GeometryState {
         ));
 
         draw_gesture.connect_drag_end(glib::clone!(
+            #[weak]
+            drawing,
             #[strong]
             geom,
             move |_, _, _| {
@@ -318,6 +309,77 @@ impl GeometryState {
         ));
 
         Ok(())
+    }
+
+    /// Entry point for a key event coming from the controller.
+    fn handle_key_event(&self, key: gdk::Key) {
+        // ------------------------------------------------------------
+        // 1️⃣  Escape key – special handling
+        // ------------------------------------------------------------
+        if key == gdk::Key::Escape {
+            self.handle_escape();
+            return; // nothing else to do for Esc
+        }
+
+        // ------------------------------------------------------------
+        // 2️⃣  All other keys – normal text entry
+        // ------------------------------------------------------------
+        self.append_key_to_input(key);
+        self.drawing.event_controller_key();
+    }
+
+    /* ---------------------------------------------------------------- *
+     *  Escape‑key handling (extracted for readability)
+     * ---------------------------------------------------------------- */
+    fn handle_escape(&self) {
+        if self.toolbox.is_button_pressed() {
+            self.enable_screenshot_overlay();
+            self.reset_toolbox_ui();
+        } else {
+            // No drawing and no toolbox interaction → close the window
+            self.window.destroy();
+        }
+    }
+
+    /// Re‑enable the screenshot overlay when the toolbox button is released
+    fn enable_screenshot_overlay(&self) {
+        self.screenshot_box.set_screenshot_box_sensitivity(true);
+        self.drawing.set_drawing(false);
+    }
+
+    /// Reset the toolbox UI state after the button is released
+    fn reset_toolbox_ui(&self) {
+        self.toolbox.set_button_pressed(false);
+        self.toolbox.remove_css_class(CSS_CLASS_PRESSED);
+    }
+
+    /* ---------------------------------------------------------------- *
+     *  Append a printable character to the stored input text
+     * ---------------------------------------------------------------- */
+    fn append_key_to_input(&self, key: gdk::Key) {
+        // 1️⃣ Retrieve the current text; bail out on error
+        let mut text = match self.settings.input_text.get_value("text").get_string() {
+            Ok(t) => t,
+            Err(e) => {
+                eprintln!("Failed to read input text: {e}");
+                return;
+            }
+        };
+
+        // 2️⃣ Convert the GDK key into a Unicode character, if possible
+        if let Some(name) = key.into() {
+            if let Some(ch) = name.to_unicode() {
+                text.push(ch);
+
+                // 3️⃣ Store the updated text back into the setting
+                // Again we ignore the Result; replace `_` with proper handling
+                // if you need to react to a failure.
+                let _ = self
+                    .settings
+                    .input_text
+                    .set_value("text", SettingValue::String(text));
+            }
+        }
     }
 
     pub fn set_new_geometry_f64(&self, top: f64, left: f64, bottom: f64, right: f64) {
@@ -386,20 +448,7 @@ impl GeometryState {
     /// y: screenshot box y position
     /// w: screenshot box width
     /// h: screenshot box height
-    pub fn get_screenshot_size(&self) -> [i32; 4] {
-        let x = self.left_box.get_edge();
-        let y = self.top_box.get_edge();
-        let w = self.full_w - x - self.right_box.get_edge();
-        let h = self.full_h - y - self.bottom_box.get_edge();
-        [x, y, w, h]
-    }
-
-    /// Get the screenshot box (x, y, w, h)
-    /// x: screenshot box x position
-    /// y: screenshot box y position
-    /// w: screenshot box width
-    /// h: screenshot box height
-    fn get_grim_cmd(&self) -> String {
+    pub fn get_grim_cmd(&self) -> String {
         let x = self.left_box.get_edge();
         let y = self.top_box.get_edge();
         let w = self.full_w - x - self.right_box.get_edge();

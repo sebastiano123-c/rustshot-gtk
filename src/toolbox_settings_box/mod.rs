@@ -1,6 +1,7 @@
 pub mod arc;
 pub mod arrow;
 pub mod freehand;
+pub mod input_text;
 pub mod line;
 pub mod numbered_circle;
 pub mod rect;

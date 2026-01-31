@@ -92,16 +92,16 @@ impl ScreenRecorder {
                         },
                     );
                 } else {
-                    let dim = geometry.get_screenshot_size();
+                    let cmd = geometry.get_grim_cmd();
                     // start recording screen
-                    se.start_record_screen(dim[0], dim[1], dim[2], dim[3]);
+                    se.start_record_screen(cmd);
                     se.add_css_class(CSS_CLASS_PRESSED_PERSISTENT);
                 }
             }
         ));
     }
 
-    pub fn start_record_screen(&self, x: i32, y: i32, w: i32, h: i32) {
+    pub fn start_record_screen(&self, cmd: String) {
         // WARNING: I would like to use FFMPEG (a tool to convert video formats, but also it is a
         // way to record the screen.) However, I do not know how to properly use it in wayland. I
         // get errors and the docs were not so useful. I will use instead 'wf-recorder' (a
@@ -117,14 +117,11 @@ impl ScreenRecorder {
         //  -y, --overwrite = Force overwriting the output file without prompting.
         let imp = self.imp();
 
-        // Build the --geometry string
-        let geometry = format!("{},{} {}x{}", x, y, w, h);
-
         // Execute the `grim` command
         let child = std::process::Command::new("wf-recorder")
             .arg("-a")
             .arg("-g")
-            .arg(&geometry)
+            .arg(&cmd)
             .arg("-f")
             .arg(&imp.output_file)
             .arg("-y")

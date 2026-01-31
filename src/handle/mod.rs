@@ -130,7 +130,6 @@ impl Handle {
             #[strong]
             geometry,
             move |_, _, _| {
-                println!("Handle::drag_end");
                 geometry
                     .toolbox
                     .draw_toolbox(&geometry)
