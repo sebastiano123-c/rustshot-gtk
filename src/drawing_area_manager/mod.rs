@@ -67,10 +67,10 @@ impl DrawingAreaManager {
     pub fn drag_begin(&self, x: f64, y: f64) {
         let imp = self.imp();
 
-        match imp.current_item.borrow().as_ref() {
+        match imp.current_item.borrow_mut().as_ref() {
             Some(drawable) => match drawable {
                 DrawableCollection::InputTexts(item) => {
-                    // TODO: when changing the color, the same applies to all text...
+                    // BUG: when changing the color, the same applies to all text...
                     // See the "event_controller_key" function for the first part of the logic explanation.
                     //
                     // The user has pressed "esc" because he has finished typing. He is actually typing on the

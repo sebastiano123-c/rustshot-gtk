@@ -36,7 +36,6 @@ impl InputTextButton {
             settings_box,
             move |b| {
                 toggle_drawing(b.upcast_ref::<gtk::Widget>(), &geom, || {
-                    println!("Attached item");
                     // Create drawable
                     let drawable = DrawableCollection::InputTexts(InputText::new(&geom.settings));
                     geom.drawing.create_new_drawable(&drawable);

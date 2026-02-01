@@ -313,23 +313,44 @@ impl GeometryState {
 
     /// Entry point for a key event coming from the controller.
     fn handle_key_event(&self, key: gdk::Key) {
-        // ------------------------------------------------------------
+        // println!("{:?}", key.name());
         // 1️⃣  Escape key – special handling
-        // ------------------------------------------------------------
         if key == gdk::Key::Escape {
             self.handle_escape();
             return; // nothing else to do for Esc
         }
+        if key == gdk::Key::BackSpace {
+            println!("delete");
+            self.handle_delete();
+            self.drawing.event_controller_key();
+            return;
+        }
 
-        // ------------------------------------------------------------
         // 2️⃣  All other keys – normal text entry
-        // ------------------------------------------------------------
         self.append_key_to_input(key);
         self.drawing.event_controller_key();
     }
 
     /* ---------------------------------------------------------------- *
-     *  Escape‑key handling (extracted for readability)
+     *  Delete‑key handling
+     * ---------------------------------------------------------------- */
+    fn handle_delete(&self) {
+        let mut text = self
+            .settings
+            .input_text
+            .get_value("text")
+            .get_string()
+            .expect("Impossible to get text");
+
+        text.pop();
+        self.settings
+            .input_text
+            .set_value("text", SettingValue::String(text))
+            .expect("Impossible to get text");
+    }
+
+    /* ---------------------------------------------------------------- *
+     *  Escape‑key handling
      * ---------------------------------------------------------------- */
     fn handle_escape(&self) {
         if self.toolbox.is_button_pressed() {
@@ -367,18 +388,18 @@ impl GeometryState {
         };
 
         // 2️⃣ Convert the GDK key into a Unicode character, if possible
-        if let Some(name) = key.into() {
-            if let Some(ch) = name.to_unicode() {
-                text.push(ch);
+        if let Some(name) = key.into()
+            && let Some(ch) = name.to_unicode()
+        {
+            text.push(ch);
 
-                // 3️⃣ Store the updated text back into the setting
-                // Again we ignore the Result; replace `_` with proper handling
-                // if you need to react to a failure.
-                let _ = self
-                    .settings
-                    .input_text
-                    .set_value("text", SettingValue::String(text));
-            }
+            // 3️⃣ Store the updated text back into the setting
+            // Again we ignore the Result; replace `_` with proper handling
+            // if you need to react to a failure.
+            let _ = self
+                .settings
+                .input_text
+                .set_value("text", SettingValue::String(text));
         }
     }
 

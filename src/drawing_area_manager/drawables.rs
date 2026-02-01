@@ -265,6 +265,8 @@ impl DragBegin for InputText {
         self.x0.set(x);
         self.y0.set(y);
 
+        println!("begin");
+
         // Se the initial height and width
         let sz = self
             .settings
@@ -459,6 +461,7 @@ impl DragEnd for NumberedCircle {
 }
 impl DragEnd for InputText {
     fn drag_end(&self) -> Option<DrawableCollection> {
+        println!("end");
         // Create an hard copy of the settings for future draws
         *self.saved_settings.borrow_mut() = Some(self.settings.hard_copy());
 
@@ -525,6 +528,7 @@ impl ControllerKey for NumberedCircle {
 }
 impl ControllerKey for InputText {
     fn event_controller_key(&self) {
+        println!("eventcontollerkey");
         let num = self
             .settings
             .input_text
@@ -536,6 +540,7 @@ impl ControllerKey for InputText {
         *self.text.borrow_mut() = text;
     }
     fn stop_controller_key(&self) -> Option<DrawableCollection> {
+        println!("stopcontrollerkey");
         // Create an hard copy of the settings for future draws
         *self.saved_settings.borrow_mut() = Some(self.settings.hard_copy());
 
@@ -1483,6 +1488,7 @@ impl Draw for NumberedCircle {
 }
 impl Draw for InputText {
     fn draw(&self, cr: &cairo::Context, pg: &gtk::pango::Layout) {
+        println!("draw");
         let settings = self.settings.input_text.clone();
 
         // Draw text in the center of the rectangle
